@@ -1,0 +1,26 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "start-frontend",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["dev", "--open"],
+      "problemMatcher": []
+    },
+    {
+      "label": "preview-frontend",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["build", "preview"],
+      "problemMatcher": []
+    },
+    {
+      "label": "generate-api-client",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["generate-api-client"],
+      "problemMatcher": []
+    }
+  ]
+}

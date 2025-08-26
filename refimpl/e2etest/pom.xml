@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <artifactId>poc-auth-e2etest</artifactId>
+
+  <parent>
+    <groupId>dev.aulait.qaa</groupId>
+    <artifactId>quarkus-auth-adapter</artifactId>
+    <version>0.8-SNAPSHOT</version>
+    <relativePath>../../</relativePath>
+  </parent>
+
+  <build>
+    <resources>
+      <resource>
+        <directory>resources</directory>
+        <filtering>true</filtering>
+        <includes>
+          <include>.env</include>
+        </includes>
+        <targetPath>../../</targetPath>
+      </resource>
+    </resources>
+  </build>
+
+  <profiles>
+    <profile>
+      <id>setup</id>
+
+      <dependencies>
+        <dependency>
+          <groupId>${project.groupId}</groupId>
+          <artifactId>${project.parent.artifactId}-keycloak-refimpl</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>${project.groupId}</groupId>
+          <artifactId>${project.parent.artifactId}-svelte-refimpl</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+      </dependencies>
+
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>${exec-plugin.version}</version>
+            <executions>
+              <execution>
+                <?m2e ignore?>
+                <id>pnpm-install</id>
+                <phase>generate-sources</phase>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <configuration>
+                  <executable>pnpm</executable>
+                  <commandlineArgs>install</commandlineArgs>
+                </configuration>
+              </execution>
+              <execution>
+                <?m2e ignore?>
+                <id>pnpm-playwright-install</id>
+                <phase>generate-sources</phase>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <configuration>
+                  <executable>pnpm</executable>
+                  <commandlineArgs>playwright install</commandlineArgs>
+                </configuration>
+              </execution>
+              <execution>
+                <?m2e ignore?>
+                <id>start-backend</id>
+                <phase>pre-integration-test</phase>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <configuration>
+                  <async>true</async>
+                  <executable>java</executable>
+                  <commandlineArgs>-jar
+                    ${project.basedir}/../keycloak-refimpl/target/quarkus-app/quarkus-run.jar</commandlineArgs>
+                </configuration>
+              </execution>
+              <execution>
+                <?m2e ignore?>
+                <id>pnpm-preview</id>
+                <phase>pre-integration-test</phase>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <configuration>
+                  <async>true</async>
+                  <executable>pnpm</executable>
+                  <commandlineArgs>-C ${project.basedir}/../svelte-refimpl preview --port
+                    ${frontend.port}</commandlineArgs>
+                </configuration>
+              </execution>
+              <execution>
+                <?m2e ignore?>
+                <id>pnpm-playwright-test</id>
+                <phase>integration-test</phase>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <configuration>
+                  <executable>pnpm</executable>
+                  <commandlineArgs>test-with-trace</commandlineArgs>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+</project>

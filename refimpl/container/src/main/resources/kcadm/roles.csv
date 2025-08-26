@@ -1,0 +1,3 @@
+REALM,ROLE
+${auth.realm},${auth.role.provider}
+${auth.realm},${auth.role.user}

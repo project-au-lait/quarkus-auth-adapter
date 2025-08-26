@@ -1,0 +1,94 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <artifactId>quarkus-auth-adapter-container</artifactId>
+
+  <parent>
+    <groupId>dev.aulait.qaa</groupId>
+    <artifactId>quarkus-auth-adapter</artifactId>
+    <version>0.8-SNAPSHOT</version>
+    <relativePath>../../</relativePath>
+  </parent>
+
+  <build>
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>true</filtering>
+        <includes>
+          <include>.env</include>
+        </includes>
+        <targetPath>${project.basedir}</targetPath>
+      </resource>
+      <resource>
+        <directory>src/main/resources/kcadm</directory>
+        <filtering>true</filtering>
+        <targetPath>${project.build.directory}/kcadm</targetPath>
+      </resource>
+    </resources>
+
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>${exec-plugin.version}</version>
+        <executions>
+          <execution>
+            <?m2e ignore?>
+            <phase>compile</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <executable>docker</executable>
+              <commandlineArgs>compose up -d --wait</commandlineArgs>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+  <profiles>
+    <profile>
+      <id>setup</id>
+
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>${exec-plugin.version}</version>
+            <executions>
+              <execution>
+                <id>add-keycloak</id>
+                <phase>install</phase>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <configuration>
+                  <executable>docker</executable>
+                  <commandlineArgs>compose cp ${project.build.directory}/kcadm keycloak:/tmp</commandlineArgs>
+                </configuration>
+              </execution>
+              <execution>
+                <id>init-keycloak</id>
+                <phase>install</phase>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <configuration>
+                  <executable>docker</executable>
+                  <commandlineArgs>compose exec -u 0 -w /tmp/kcadm -T keycloak bash -c
+                    'chmod u+x ./init-keycloak.sh ; ./init-keycloak.sh create_all'</commandlineArgs>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+</project>

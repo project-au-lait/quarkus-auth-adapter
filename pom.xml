@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>dev.aulait.qaa</groupId>
+  <artifactId>quarkus-auth-adapter</artifactId>
+  <version>0.8-SNAPSHOT</version>
+  <packaging>pom</packaging>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <version>1.18.32</version>
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>${quarkus.platform.group-id}</groupId>
+        <artifactId>${quarkus.platform.artifact-id}</artifactId>
+        <version>${quarkus.platform.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <properties>
+    <auth.user>admin</auth.user>
+    <auth.password>admin</auth.password>
+    <auth.port>8085</auth.port>
+    <auth.port.ssl>8545</auth.port.ssl>
+    <auth.realm>qaa-realm</auth.realm>
+    <auth.role.provider>provider</auth.role.provider>
+    <auth.role.user>user</auth.role.user>
+    <auth.clientId>qaa-client</auth.clientId>
+    <auth.clientSecret>qaa-secret</auth.clientSecret>
+    <auth.theme>qaa-theme</auth.theme>
+    <auth.accessToken.timeout>5</auth.accessToken.timeout>
+    <auth.refreshToken.cookie.timeout>10</auth.refreshToken.cookie.timeout>
+
+    <backend.port>8080</backend.port>
+
+    <exec-plugin.version>3.2.0</exec-plugin.version>
+
+    <frontend.port>5173</frontend.port>
+
+    <maven.compiler.release>21</maven.compiler.release>
+
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+    <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
+    <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
+    <quarkus.platform.version>3.20.0</quarkus.platform.version>
+
+    <smtp.web.port>8025</smtp.web.port>
+
+    <surefire-plugin.version>3.5.3</surefire-plugin.version>
+  </properties>
+
+  <modules>
+    <module>lib/api</module>
+    <module>lib/keycloak</module>
+    <module>refimpl/container</module>
+    <module>refimpl/e2etest</module>
+    <module>refimpl/keycloak-refimpl</module>
+    <module>refimpl/svelte-refimpl</module>
+  </modules>
+
+
+  <!-- More Project Information -->
+  <name>quarkus-auth-adapter</name>
+  <description>Quarkus Authentication Adapter</description>
+  <url>https://aulait.dev/</url>
+  <licenses>
+    <license>
+      <name>The Apache Software License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+      <comments>A business-friendly OSS license</comments>
+    </license>
+  </licenses>
+  <developers>
+    <developer>
+      <id>yuichi.kuwahara</id>
+      <name>Yuichi Kuwahara</name>
+      <email>yuichi.kuwahara.0@gmail.com</email>
+    </developer>
+  </developers>
+
+  <!-- Environment Settings -->
+  <scm>
+    <connection>scm:git:git//github.com/project-au-lait/quarkus-auth-adapter.git</connection>
+    <developerConnection>scm:git:git//github.com/project-au-lait/quarkus-auth-adapter.git</developerConnection>
+    <url>https://github.com/project-au-lait/quarkus-auth-adapter.git</url>
+  </scm>
+
+  <distributionManagement>
+    <snapshotRepository>
+      <id>github</id>
+      <name>GitHub Project Au Lait Apache Maven Packages</name>
+      <url>https://maven.pkg.github.com/project-au-lait/quarkus-auth-adapter</url>
+    </snapshotRepository>
+  </distributionManagement>
+
+  <!-- Environment Settings -->
+  <profiles>
+    <profile>
+      <id>e2etest</id>
+      <activation>
+        <property>
+          <name>env.E2E_TEST</name>
+          <value>true</value>
+        </property>
+      </activation>
+      <properties>
+        <auth.accessToken.timeout>1</auth.accessToken.timeout>
+        <auth.refreshToken.cookie.timeout>2</auth.refreshToken.cookie.timeout>
+      </properties>
+    </profile>
+
+    <profile>
+      <id>release</id>
+
+      <build>
+        <plugins>
+
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-source-plugin</artifactId>
+            <version>3.3.1</version>
+            <executions>
+              <execution>
+                <id>attach-sources</id>
+                <goals>
+                  <goal>jar-no-fork</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <version>3.7.0</version>
+            <executions>
+              <execution>
+                <id>attach-javadocs</id>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>3.2.4</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <gpgArguments>
+                <arg>--pinentry-mode</arg>
+                <arg>loopback</arg>
+              </gpgArguments>
+            </configuration>
+          </plugin>
+
+        </plugins>
+      </build>
+    </profile>
+
+    <profile>
+      <id>maven-central</id>
+
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.sonatype.central</groupId>
+            <artifactId>central-publishing-maven-plugin</artifactId>
+            <version>0.5.0</version>
+            <extensions>true</extensions>
+            <configuration>
+              <publishingServerId>central</publishingServerId>
+              <autoPublish>false</autoPublish>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+  </profiles>
+
+</project>

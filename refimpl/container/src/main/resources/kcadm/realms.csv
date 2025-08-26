@@ -1,0 +1,2 @@
+REALM,CONFIG_PATH,FRONTEND_PORT,CLIENT_ID,CLIENT_SECRET
+${auth.realm},./keycloak-realm.json,${frontend.port},${auth.clientId},${auth.clientSecret}

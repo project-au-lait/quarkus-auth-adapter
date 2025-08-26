@@ -1,0 +1,26 @@
+{
+  "accessTokenLifespan": "${auth.accessToken.timeout}",
+  "emailTheme": "${auth.theme}",
+  "enabled": true,
+  "loginWithEmailAllowed": true,
+  "realm": "${auth.realm}",
+  "refreshTokenMaxReuse": 0,
+  "registrationAllowed": true,
+  "resetPasswordAllowed": true,
+  "revokeRefreshToken": true,
+  "smtpServer": {
+    "auth": false,
+    "envelopeFrom": "...",
+    "from": "...",
+    "fromDisplayName": "...",
+    "host": "smtp",
+    "password": "admin",
+    "port": 1025,
+    "replyTo": "...",
+    "replyToDisplayName": "...",
+    "ssl": false,
+    "starttls": "",
+    "user": "admin"
+  },
+  "verifyEmail": true
+}

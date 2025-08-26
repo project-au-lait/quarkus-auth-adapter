@@ -1,0 +1,20 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Attach Quarkus",
+      "request": "attach",
+      "hostName": "localhost",
+      "port": 5005,
+      "projectName": "keycloak-refimpl",
+      "sourcePaths": ["${workspaceFolder}/lib/keycloak/src/main/java"]
+    },
+    {
+      "type": "java",
+      "name": "Current File",
+      "request": "launch",
+      "mainClass": "${file}"
+    }
+  ]
+}

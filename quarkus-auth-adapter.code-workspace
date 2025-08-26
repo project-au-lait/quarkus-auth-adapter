@@ -1,0 +1,73 @@
+{
+  "extensions": {
+    "recommendations": [
+      "bierner.markdown-mermaid",
+      "dbaeumer.vscode-eslint",
+      "esbenp.prettier-vscode",
+      "GabrielBB.vscode-lombok",
+      "josevseb.google-java-format-for-vs-code",
+      "mhutchie.git-graph",
+      "redhat.vscode-xml",
+      "redhat.vscode-yaml",
+      "sonarsource.sonarlint-vscode",
+      "svelte.svelte-vscode",
+      "vscjava.vscode-java-pack"
+    ]
+  },
+  "folders": [
+    {
+      "name": "quarkus-auth-adapter",
+      "path": "."
+    },
+    {
+      "name": "svelte-refimpl",
+      "path": "refimpl/svelte-refimpl"
+    },
+    {
+      "name": "e2etest",
+      "path": "refimpl/e2etest"
+    }
+  ],
+  "settings": {
+    "[html]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[java]": {
+      "editor.defaultFormatter": "josevseb.google-java-format-for-vs-code"
+    },
+    "[javascript]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[json]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[jsonc]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[markdown]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[svelte]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[typescript]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[xml]": {
+      "editor.defaultFormatter": "redhat.vscode-xml"
+    },
+    "[yaml]": {
+      "editor.defaultFormatter": "redhat.vscode-yaml"
+    },
+    "[sql]": {
+      "editor.defaultFormatter": "mtxr.sqltools"
+    },
+    "editor.formatOnSave": true,
+    "java.test.config": {
+      "vmArgs": [
+        "-Dquarkus.http.test-host=localhost",
+        "-Djava.util.logging.manager=org.jboss.logmanager.LogManager"
+      ]
+    }
+  }
+}

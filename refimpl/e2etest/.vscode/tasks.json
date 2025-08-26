@@ -1,0 +1,19 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "run-e2etest",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["run", "e2etest"],
+      "problemMatcher": []
+    },
+    {
+      "label": "show-e2etest-report",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["playwright", "show-report"],
+      "problemMatcher": []
+    }
+  ]
+}

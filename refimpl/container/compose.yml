@@ -1,0 +1,31 @@
+services:
+  keycloak:
+    command: start-dev
+    image: quay.io/keycloak/keycloak:latest
+    environment:
+      FRONTEND_URL: http://localhost:${FRONTEND_PORT}
+      KEYCLOAK_ADMIN: ${AUTH_USER}
+      KEYCLOAK_ADMIN_PASSWORD: ${AUTH_PASSWORD}
+      KC_HEALTH_ENABLED: true
+      TZ: ${OS_TIMEZONE}
+    ports:
+      - ${AUTH_PORT}:8080
+      - ${AUTH_PORT_SSL}:8543
+
+  healthchecker:
+    command: ["tail", "-f", "/dev/null"]
+    image: alpine/curl
+    healthcheck:
+      test:
+        ["CMD", "curl", "--head", "-fsS", "http://keycloak:9000/health/ready"]
+      interval: 30s
+      retries: 3
+      start_period: 15s
+      start_interval: 1s
+      timeout: 10s
+
+  smtp:
+    image: axllent/mailpit:latest
+    ports:
+      - ${SMTP_WEB_PORT}:8025
+    restart: always
