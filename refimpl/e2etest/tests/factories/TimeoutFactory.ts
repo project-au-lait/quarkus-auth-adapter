@@ -4,7 +4,8 @@ export default class TimeoutFactory {
   private static readonly REFRESH_TOKEN_COOKIE_TIMEOUT =
     Number(process.env.REFRESH_TOKEN_COOKIE_TIMEOUT) * 1000;
   private static readonly ACCESS_TOKEN_TIMEOUT = Number(process.env.ACCESS_TOKEN_TIMEOUT) * 1000;
-  private static readonly MARGIN = 300;
+  private static readonly ACCESS_TOKEN_TIMEOUT_MARGIN = 300;
+  private static readonly REFRESH_TOKEN_COOKIE_TIMEOUT_MARGIN = 1000;
   static readonly TIMEOUT_WAIT_MULTIPLIER = 1.4;
   static readonly SESSION_MIDPOINT_OFFSET_RATIO = 0.6;
   static readonly TOKEN_REFRESH_INTERVAL = Number(process.env.PUBLIC_TOKEN_REFRESH_CHECK_INTERVAL);
@@ -21,11 +22,12 @@ export default class TimeoutFactory {
   static createTimeForTokenRefresh(): number {
     return this.TOKEN_REFRESH_INTERVAL * this.TOKEN_REFRESH_INTERVAL_MULTIPLIER;
   }
+
   static refreshTokenTimeout() {
-    return this.REFRESH_TOKEN_COOKIE_TIMEOUT + this.MARGIN;
+    return this.REFRESH_TOKEN_COOKIE_TIMEOUT + this.REFRESH_TOKEN_COOKIE_TIMEOUT_MARGIN;
   }
 
   static accessTokenTimeout() {
-    return this.ACCESS_TOKEN_TIMEOUT + this.MARGIN;
+    return this.ACCESS_TOKEN_TIMEOUT + this.ACCESS_TOKEN_TIMEOUT_MARGIN;
   }
 }
