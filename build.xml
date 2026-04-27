@@ -1,0 +1,31 @@
+<project xmlns:if="ant:if" xmlns:unless="ant:unless" name="quarkus-auth-adapter"
+  basedir=".">
+
+  <taskdef resource="net/sf/antcontrib/antlib.xml" />
+
+  <condition property="mvn.cmd" value="${basedir}\mvnw.cmd" else="${basedir}/mvnw">
+    <os family="windows" />
+  </condition>
+
+  <target name="deploy">
+    <condition property="maven-central" value=",maven-central" else="">
+      <not>
+        <matches pattern="-SNAPSHOT$" string="${project.version}" />
+      </not>
+    </condition>
+
+    <trycatch>
+      <try>
+        <exec executable="${mvn.cmd}" failonerror="true">
+          <arg line="clean deploy -P setup,release${maven-central}" />
+        </exec>
+      </try>
+      <finally>
+        <exec executable="docker" failonerror="true">
+          <arg line="compose down" />
+        </exec>
+      </finally>
+    </trycatch>
+  </target>
+
+</project>

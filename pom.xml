@@ -31,6 +31,9 @@
   </dependencyManagement>
 
   <properties>
+    <ant.file>build.xml</ant.file>
+    <ant.target>deploy</ant.target>
+
     <auth.user>admin</auth.user>
     <auth.password>admin</auth.password>
     <auth.port>8085</auth.port>
@@ -46,9 +49,13 @@
 
     <backend.port>8080</backend.port>
 
+    <deployAtEnd>true</deployAtEnd>
+
     <exec-plugin.version>3.2.0</exec-plugin.version>
 
     <frontend.port>5173</frontend.port>
+
+    <installAtEnd>true</installAtEnd>
 
     <maven.compiler.release>21</maven.compiler.release>
 
@@ -61,6 +68,8 @@
 
     <smtp.web.port>8025</smtp.web.port>
 
+    <maven.deploy.skip>false</maven.deploy.skip>
+
     <surefire-plugin.version>3.5.3</surefire-plugin.version>
   </properties>
 
@@ -72,6 +81,44 @@
     <module>refimpl/keycloak-refimpl</module>
     <module>refimpl/svelte-refimpl</module>
   </modules>
+
+  <build>
+    <defaultGoal>antrun:run</defaultGoal>
+
+    <plugins>
+      <plugin>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <inherited>false</inherited>
+        <configuration>
+          <target>
+            <ant antfile="${ant.file}" target="${ant.target}" />
+          </target>
+        </configuration>
+      </plugin>
+    </plugins>
+
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <artifactId>maven-antrun-plugin</artifactId>
+          <version>1.8</version>
+          <inherited>false</inherited>
+          <dependencies>
+            <dependency>
+              <groupId>org.apache.ant</groupId>
+              <artifactId>ant</artifactId>
+              <version>1.10.14</version>
+            </dependency>
+            <dependency>
+              <groupId>ant-contrib</groupId>
+              <artifactId>ant-contrib</artifactId>
+              <version>1.0b3</version>
+            </dependency>
+          </dependencies>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
 
 
   <!-- More Project Information -->
