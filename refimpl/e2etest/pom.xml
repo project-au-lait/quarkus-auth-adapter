@@ -75,7 +75,7 @@
                 </goals>
                 <configuration>
                   <executable>pnpm</executable>
-                  <commandlineArgs>playwright install</commandlineArgs>
+                  <commandlineArgs>playwright-install</commandlineArgs>
                 </configuration>
               </execution>
               <execution>
