@@ -22,7 +22,7 @@
       </try>
       <finally>
         <exec executable="docker" failonerror="true">
-          <arg line="compose down" />
+          <arg line="compose -f refimpl/container/compose.yml down" />
         </exec>
       </finally>
     </trycatch>
