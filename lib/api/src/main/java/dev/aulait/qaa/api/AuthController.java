@@ -14,9 +14,10 @@ public interface AuthController {
 
   static final String BASE_PATH = "auth";
   static final String LOGIN_PATH = "/login";
+  static final String ME_PATH = "/me";
+  static final String REFRESH_TOKEN_PATH = "/refresh-token";
   static final String FORGOT_PASSWORD_PATH = "/forgot-password";
   static final String RESET_PASSWORD_PATH = "/reset-password";
-  static final String REFRESH_TOKEN_PATH = "/refresh-token";
   static final String REFRESH_TOKEN_COOKIE_NAME = "refreshToken";
 
   @POST
@@ -29,6 +30,14 @@ public interface AuthController {
               mediaType = MediaType.APPLICATION_JSON,
               schema = @Schema(implementation = LoginResponse.class)))
   Response login(LoginRequest request);
+
+  @GET
+  @Path(ME_PATH)
+  @APIResponse(
+      responseCode = "200",
+      description =
+          "Returns the authenticated user's username, or empty string if not authenticated")
+  String me();
 
   @GET
   @Path(REFRESH_TOKEN_PATH)

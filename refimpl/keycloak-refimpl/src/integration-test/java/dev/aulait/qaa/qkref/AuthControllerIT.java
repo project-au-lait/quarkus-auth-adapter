@@ -64,4 +64,22 @@ class AuthControllerIT {
 
     assertEquals(Status.BAD_REQUEST.getStatusCode(), error.getStatusCode());
   }
+
+  @Test
+  void me_authenticated() {
+    authClient.login(AuthDataFactory.createProvider1());
+
+    String userName = authClient.me();
+
+    assertEquals("provider-1", userName);
+  }
+
+  @Test
+  void me_unauthenticated() {
+    AuthClient unauthenticatedClient = new AuthClient();
+
+    String userName = unauthenticatedClient.me();
+
+    assertEquals("", userName);
+  }
 }

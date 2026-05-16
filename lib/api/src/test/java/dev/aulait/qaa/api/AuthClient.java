@@ -27,6 +27,10 @@ public class AuthClient {
     return client.post(BASE_PATH + LOGIN_PATH, request, ErrorResponse.class);
   }
 
+  public String me() {
+    return client.given().get(BASE_PATH + ME_PATH).then().extract().asString();
+  }
+
   public LoginResponse refreshToken() {
     Response response =
         client

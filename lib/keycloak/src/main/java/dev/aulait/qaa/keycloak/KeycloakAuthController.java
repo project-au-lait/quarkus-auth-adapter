@@ -5,6 +5,7 @@ import dev.aulait.qaa.api.ForgotPasswordRequest;
 import dev.aulait.qaa.api.LoginRequest;
 import dev.aulait.qaa.api.LoginResponse;
 import dev.aulait.qaa.api.ResetPasswordRequest;
+import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.ws.rs.CookieParam;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.NewCookie;
@@ -30,6 +31,7 @@ public class KeycloakAuthController implements AuthController {
   private final AuthzClient authzClient;
   private final Keycloak keycloak;
   private final AuthHttpClient authHttpClient;
+  private final SecurityIdentity identity;
 
   @ConfigProperty(name = "auth.refreshToken.cookie.timeout")
   private int refreshTokenCookieTimeout;
@@ -54,6 +56,14 @@ public class KeycloakAuthController implements AuthController {
             .build();
 
     return Response.ok(loginResponse).cookie(cookie).build();
+  }
+
+  @Override
+  public String me() {
+    if (identity.isAnonymous()) {
+      return "";
+    }
+    return identity.getPrincipal().getName();
   }
 
   @Override
