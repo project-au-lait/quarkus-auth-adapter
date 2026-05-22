@@ -35,9 +35,12 @@ public interface AuthController {
   @Path(ME_PATH)
   @APIResponse(
       responseCode = "200",
-      description =
-          "Returns the authenticated user's username, or empty string if not authenticated")
-  String me();
+      description = "Returns the authenticated user's information",
+      content =
+          @Content(
+              mediaType = MediaType.APPLICATION_JSON,
+              schema = @Schema(implementation = MeResponse.class)))
+  MeResponse me();
 
   @GET
   @Path(REFRESH_TOKEN_PATH)

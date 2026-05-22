@@ -2,10 +2,13 @@ package dev.aulait.qaa.qkref;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import dev.aulait.qaa.api.AuthClient;
 import dev.aulait.qaa.api.ErrorResponse;
 import dev.aulait.qaa.api.LoginResponse;
+import dev.aulait.qaa.api.MeResponse;
 import dev.aulait.qaa.api.RestrictedClient;
 import dev.aulait.qaa.api.TestConfig;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
@@ -69,17 +72,21 @@ class AuthControllerIT {
   void me_authenticated() {
     authClient.login(AuthDataFactory.createProvider1());
 
-    String userName = authClient.me();
+    MeResponse me = authClient.me();
 
-    assertEquals("provider-1", userName);
+    assertEquals("First", me.getFirstName());
+    assertEquals("Last", me.getLastName());
+    assertTrue(me.getRoles().contains("provider"));
   }
 
   @Test
   void me_unauthenticated() {
     AuthClient unauthenticatedClient = new AuthClient();
 
-    String userName = unauthenticatedClient.me();
+    MeResponse me = unauthenticatedClient.me();
 
-    assertEquals("", userName);
+    assertNull(me.getFirstName());
+    assertNull(me.getLastName());
+    assertNull(me.getRoles());
   }
 }
