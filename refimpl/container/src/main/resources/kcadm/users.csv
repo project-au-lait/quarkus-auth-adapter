@@ -1,3 +1,3 @@
-REALM,USER_NAME,EMAIL,PASSWORD,ROLE
-${auth.realm},provider-1,provider-1@sqk.dev,provider-1,${auth.role.provider}
-${auth.realm},user-1,user-1@sqk.dev,user-1,${auth.role.user}
+REALM,USER_NAME,EMAIL,PASSWORD,ROLE,FIRST_NAME,LAST_NAME
+${auth.realm},provider-1,provider-1@sqk.dev,provider-1,${auth.role.provider},ProviderFirstName,ProviderLastName
+${auth.realm},user-1,user-1@sqk.dev,user-1,${auth.role.user},UserFirstName,UserLastName

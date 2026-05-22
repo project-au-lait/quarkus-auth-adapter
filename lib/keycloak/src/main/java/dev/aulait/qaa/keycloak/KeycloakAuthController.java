@@ -4,6 +4,7 @@ import dev.aulait.qaa.api.AuthController;
 import dev.aulait.qaa.api.ForgotPasswordRequest;
 import dev.aulait.qaa.api.LoginRequest;
 import dev.aulait.qaa.api.LoginResponse;
+import dev.aulait.qaa.api.MeResponse;
 import dev.aulait.qaa.api.ResetPasswordRequest;
 import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.ws.rs.CookieParam;
@@ -59,11 +60,25 @@ public class KeycloakAuthController implements AuthController {
   }
 
   @Override
-  public String me() {
+  public MeResponse me() {
     if (identity.isAnonymous()) {
-      return "";
+      return MeResponse.builder().build();
     }
-    return identity.getPrincipal().getName();
+
+    String username = identity.getPrincipal().getName();
+    String realm = authzClient.getConfiguration().getRealm();
+    List<UserRepresentation> users = keycloak.realm(realm).users().search(username, 0, 1);
+
+    if (users.isEmpty()) {
+      return MeResponse.builder().build();
+    }
+
+    UserRepresentation user = users.get(0);
+    return MeResponse.builder()
+        .firstName(user.getFirstName())
+        .lastName(user.getLastName())
+        .roles(List.copyOf(identity.getRoles()))
+        .build();
   }
 
   @Override
