@@ -29,9 +29,9 @@ function create_roles() {
 }
 
 function create_users() {
-  sed 1d $SCRIPT_DIR/users.csv | while IFS=, read REALM USER_NAME EMAIL PASSWORD ROLE || [ -n "$REALM" ]
+  sed 1d $SCRIPT_DIR/users.csv | while IFS=, read REALM USER_NAME EMAIL PASSWORD ROLE FIRST_NAME LAST_NAME || [ -n "$REALM" ]
   do
-    kcadm.sh create users -r $REALM -s username=$USER_NAME -s enabled=true -s email=$EMAIL -s emailVerified=true -s firstName="First" -s lastName="Last" -s 'requiredActions=[]'
+    kcadm.sh create users -r $REALM -s username=$USER_NAME -s enabled=true -s email=$EMAIL -s emailVerified=true -s firstName="$FIRST_NAME" -s lastName="$LAST_NAME" -s 'requiredActions=[]'
     kcadm.sh set-password -r $REALM --username $USER_NAME --new-password $PASSWORD
     kcadm.sh add-roles --uusername $USER_NAME --rolename $ROLE -r $REALM
   done

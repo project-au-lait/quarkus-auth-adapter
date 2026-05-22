@@ -74,8 +74,8 @@ class AuthControllerIT {
 
     MeResponse me = authClient.me();
 
-    assertEquals("First", me.getFirstName());
-    assertEquals("Last", me.getLastName());
+    assertEquals("ProviderFirstName", me.getFirstName());
+    assertEquals("ProviderLastName", me.getLastName());
     assertTrue(me.getRoles().contains("provider"));
   }
 
