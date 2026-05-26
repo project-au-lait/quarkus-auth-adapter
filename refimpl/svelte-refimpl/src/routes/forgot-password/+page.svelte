@@ -7,7 +7,7 @@
   async function requestReset() {
     const data: ForgotPasswordRequest = { email };
 
-    const result = await ApiHandler.handle<void>(fetch, (api) =>
+    const result = await ApiHandler.callAuthenticated<void>(fetch, (api) =>
       api.auth.forgotPasswordCreate(data)
     );
 

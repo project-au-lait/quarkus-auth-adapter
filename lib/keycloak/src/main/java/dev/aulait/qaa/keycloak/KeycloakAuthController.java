@@ -6,46 +6,69 @@ import dev.aulait.qaa.api.LoginRequest;
 import dev.aulait.qaa.api.LoginResponse;
 import dev.aulait.qaa.api.MeResponse;
 import dev.aulait.qaa.api.ResetPasswordRequest;
-import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.ws.rs.CookieParam;
+import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.eclipse.microprofile.openapi.annotations.tags.Tags;
-import org.keycloak.admin.client.Keycloak;
-import org.keycloak.authorization.client.AuthzClient;
-import org.keycloak.authorization.client.Configuration;
-import org.keycloak.authorization.client.util.Http;
 import org.keycloak.representations.AccessTokenResponse;
-import org.keycloak.representations.idm.UserRepresentation;
 
 @Path(AuthController.BASE_PATH)
 @Tags(@Tag(name = "Auth Controller"))
 @RequiredArgsConstructor
 public class KeycloakAuthController implements AuthController {
 
-  private final AuthzClient authzClient;
-  private final Keycloak keycloak;
-  private final AuthHttpClient authHttpClient;
-  private final SecurityIdentity identity;
+  private final KeycloakAuthService authService;
 
   @ConfigProperty(name = "auth.refreshToken.cookie.timeout")
   private int refreshTokenCookieTimeout;
 
   @Override
-  public Response login(LoginRequest request) {
-    AccessTokenResponse atr =
-        authzClient.obtainAccessToken(request.getUserName(), request.getPassword());
-
-    return build(atr);
+  public Response login(LoginRequest request, @HeaderParam(DPOP_HEADER_NAME) String dpopProof) {
+    return toTokenResponse(authService.login(request, dpopProof));
   }
 
-  protected Response build(AccessTokenResponse atr) {
+  @Override
+  public MeResponse me() {
+    return authService.me();
+  }
+
+  @Override
+  public Response refreshToken(
+      @CookieParam(REFRESH_TOKEN_COOKIE_NAME) String refreshToken,
+      @HeaderParam(DPOP_HEADER_NAME) String dpopProof) {
+
+    if (refreshToken == null || refreshToken.isEmpty()) {
+      return Response.status(Response.Status.BAD_REQUEST)
+          .entity("Refresh token is required")
+          .build();
+    }
+
+    return toTokenResponse(authService.refresh(refreshToken, dpopProof));
+  }
+
+  @Override
+  public Response forgotPassword(ForgotPasswordRequest request) {
+    if (!authService.forgotPassword(request.getEmail())) {
+      return Response.status(Status.BAD_REQUEST).build();
+    }
+    return Response.ok().build();
+  }
+
+  @Override
+  public Response resetPassword(ResetPasswordRequest request) {
+    if (!authService.resetPassword(request.getCode(), request.getNewPassword())) {
+      return Response.serverError().entity("Internal server error occurred").build();
+    }
+    return Response.ok().build();
+  }
+
+  protected Response toTokenResponse(AccessTokenResponse atr) {
     LoginResponse loginResponse = new LoginResponse();
     loginResponse.setAccessToken(atr.getToken());
 
@@ -57,87 +80,5 @@ public class KeycloakAuthController implements AuthController {
             .build();
 
     return Response.ok(loginResponse).cookie(cookie).build();
-  }
-
-  @Override
-  public MeResponse me() {
-    if (identity.isAnonymous()) {
-      return MeResponse.builder().build();
-    }
-
-    String username = identity.getPrincipal().getName();
-    String realm = authzClient.getConfiguration().getRealm();
-    List<UserRepresentation> users = keycloak.realm(realm).users().search(username, 0, 1);
-
-    if (users.isEmpty()) {
-      return MeResponse.builder().build();
-    }
-
-    UserRepresentation user = users.get(0);
-    return MeResponse.builder()
-        .firstName(user.getFirstName())
-        .lastName(user.getLastName())
-        .roles(List.copyOf(identity.getRoles()))
-        .build();
-  }
-
-  @Override
-  public Response refreshToken(@CookieParam(REFRESH_TOKEN_COOKIE_NAME) String refreshToken) {
-
-    if (refreshToken == null || refreshToken.isEmpty()) {
-      return Response.status(Response.Status.BAD_REQUEST)
-          .entity("Refresh token is required")
-          .build();
-    }
-
-    Configuration config = authzClient.getConfiguration();
-    String tokenEndpoint = authzClient.getServerConfiguration().getTokenEndpoint();
-    Http http = new Http(config, config.getClientCredentialsProvider());
-
-    AccessTokenResponse atr =
-        http.<AccessTokenResponse>post(tokenEndpoint)
-            .authentication()
-            .client()
-            .form()
-            .param("grant_type", "refresh_token")
-            .param("refresh_token", refreshToken)
-            .response()
-            .json(AccessTokenResponse.class)
-            .execute();
-
-    return build(atr);
-  }
-
-  @Override
-  public Response forgotPassword(ForgotPasswordRequest request) {
-    String realm = authzClient.getConfiguration().getRealm();
-    List<UserRepresentation> users = keycloak.realm(realm).users().search(request.getEmail(), 0, 1);
-
-    if (users.isEmpty()) {
-      return Response.status(Status.BAD_REQUEST).build();
-    }
-
-    keycloak
-        .realm(realm)
-        .users()
-        .get(users.get(0).getId())
-        .executeActionsEmail(List.of("UPDATE_PASSWORD"));
-
-    return Response.ok().build();
-  }
-
-  public Response resetPassword(ResetPasswordRequest request) {
-    boolean result =
-        authHttpClient.resetPassword(
-            authzClient.getConfiguration().getAuthServerUrl(),
-            authzClient.getConfiguration().getRealm(),
-            request.getCode(),
-            request.getNewPassword());
-
-    if (!result) {
-      return Response.serverError().entity("Internal server error occurred").build();
-    }
-
-    return Response.ok().build();
   }
 }

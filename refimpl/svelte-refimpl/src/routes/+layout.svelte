@@ -3,10 +3,10 @@
 	import { onMount } from 'svelte';
 	import MessagePanel from '$lib/arch/global/MessagePanel.svelte';
 	import accessTokenStore from '$lib/arch/auth/AccessTokenStore';
-	import ApiHandler from '$lib/arch/api/ApiHandler';
+	import SessionManager from '$lib/arch/auth/SessionManager';
 
 	onMount(async () => {
-		await ApiHandler.refreshAccessToken(fetch);
+		await SessionManager.refreshAccessToken(fetch);
 	});
 </script>
 
