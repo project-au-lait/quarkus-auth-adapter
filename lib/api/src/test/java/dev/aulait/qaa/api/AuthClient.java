@@ -37,11 +37,7 @@ public class AuthClient {
     String authPort = config.getOptionalValue("auth.port", String.class).orElse("8085");
     String authRealm = config.getOptionalValue("auth.realm", String.class).orElse("qaa-realm");
     tokenEndpoint =
-        "http://localhost:"
-            + authPort
-            + "/realms/"
-            + authRealm
-            + "/protocol/openid-connect/token";
+        "http://localhost:" + authPort + "/realms/" + authRealm + "/protocol/openid-connect/token";
 
     client =
         RestClient.builder()
@@ -54,8 +50,7 @@ public class AuthClient {
             .headerSupplier(
                 "DPoP",
                 () ->
-                    dpopProofBuilder.build(
-                        nextHtm, nextHtu, nextIncludeAuth ? accessToken : null))
+                    dpopProofBuilder.build(nextHtm, nextHtu, nextIncludeAuth ? accessToken : null))
             .build();
   }
 
@@ -65,10 +60,6 @@ public class AuthClient {
     this.nextIncludeAuth = true;
   }
 
-  public LoginResponse login(String username, String password) {
-    return login(new LoginRequest(username, password));
-  }
-
   public LoginResponse login(LoginRequest request) {
     nextHtm = "POST";
     nextHtu = tokenEndpoint;
@@ -76,10 +67,6 @@ public class AuthClient {
     LoginResponse response = client.post(BASE_PATH + LOGIN_PATH, request, LoginResponse.class);
     accessToken = response.getAccessToken();
     return response;
-  }
-
-  public ErrorResponse loginWithError(String username, String password) {
-    return loginWithError(new LoginRequest(username, password));
   }
 
   public ErrorResponse loginWithError(LoginRequest request) {
