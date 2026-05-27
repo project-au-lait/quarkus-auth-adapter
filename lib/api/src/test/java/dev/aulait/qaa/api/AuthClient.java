@@ -2,25 +2,34 @@ package dev.aulait.qaa.api;
 
 import static dev.aulait.qaa.api.AuthController.*;
 
-import io.restassured.response.Response;
-import jakarta.ws.rs.core.Response.Status;
+import dev.aulait.mousse.util.RestClient;
+import java.net.CookieManager;
+import java.net.CookiePolicy;
+import java.net.HttpCookie;
+import java.net.URI;
+import java.net.http.HttpClient;
 import lombok.Getter;
 
 public class AuthClient {
 
-  @Getter private RestClient client = new RestClient();
+  @Getter private String accessToken;
+  private CookieManager cookieManager = new CookieManager(null, CookiePolicy.ACCEPT_ALL);
+  private HttpClient httpClient = HttpClient.newBuilder().cookieHandler(cookieManager).build();
+
+  @Getter
+  private RestClient client =
+      RestClient.builder()
+          .httpClient(httpClient)
+          .quarkus()
+          .allowNonSuccessStatus(true)
+          .headerSupplier(
+              "Authorization", () -> accessToken != null ? "Bearer " + accessToken : null)
+          .build();
 
   public LoginResponse login(LoginRequest request) {
-    Response response = client.given().body(request).post(BASE_PATH + LOGIN_PATH);
-
-    return build(response);
-  }
-
-  LoginResponse build(Response response) {
-    LoginResponse loginResponse = response.body().as(LoginResponse.class);
-    client.setAccessToken(loginResponse.getAccessToken());
-    client.setRefreshToken(response.getCookie(REFRESH_TOKEN_COOKIE_NAME));
-    return loginResponse;
+    LoginResponse response = client.post(BASE_PATH + LOGIN_PATH, request, LoginResponse.class);
+    accessToken = response.getAccessToken();
+    return response;
   }
 
   public ErrorResponse loginWithError(LoginRequest request) {
@@ -28,31 +37,23 @@ public class AuthClient {
   }
 
   public MeResponse me() {
-    return client.given().get(BASE_PATH + ME_PATH).then().extract().as(MeResponse.class);
+    return client.get(BASE_PATH + ME_PATH, MeResponse.class);
   }
 
   public LoginResponse refreshToken() {
-    Response response =
-        client
-            .given()
-            .cookie(REFRESH_TOKEN_COOKIE_NAME, client.getRefreshToken())
-            .get(BASE_PATH + REFRESH_TOKEN_PATH);
-
-    return build(response);
+    return client.get(BASE_PATH + REFRESH_TOKEN_PATH, LoginResponse.class);
   }
 
   public ErrorResponse refreshTokenWithError() {
-    Response response =
-        client
-            .given()
-            .cookie(REFRESH_TOKEN_COOKIE_NAME, "invalid-token")
-            .get(BASE_PATH + REFRESH_TOKEN_PATH);
+    URI baseUri = URI.create(client.getBaseUrl());
 
-    Status status = Status.fromStatusCode(response.getStatusCode());
+    HttpCookie cookie = new HttpCookie(REFRESH_TOKEN_COOKIE_NAME, "invalid-token");
+    cookie.setDomain(baseUri.getHost());
+    cookie.setPath("/");
+    cookie.setVersion(0);
 
-    return ErrorResponse.builder()
-        .status(status.getReasonPhrase())
-        .statusCode(status.getStatusCode())
-        .build();
+    cookieManager.getCookieStore().add(baseUri, cookie);
+
+    return client.get(BASE_PATH + REFRESH_TOKEN_PATH, ErrorResponse.class);
   }
 }

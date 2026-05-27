@@ -9,17 +9,18 @@ import dev.aulait.qaa.api.AuthClient;
 import dev.aulait.qaa.api.ErrorResponse;
 import dev.aulait.qaa.api.LoginResponse;
 import dev.aulait.qaa.api.MeResponse;
-import dev.aulait.qaa.api.RestrictedClient;
-import dev.aulait.qaa.api.TestConfig;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import jakarta.ws.rs.core.Response.Status;
+import java.net.http.HttpResponse;
+import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.junit.jupiter.api.Test;
 
 @QuarkusIntegrationTest
 class AuthControllerIT {
 
   AuthClient authClient = new AuthClient();
-  RestrictedClient restrictedClient = new RestrictedClient(authClient.getClient(), "/restricted");
+  RestrictedClient restrictedClient = new RestrictedClient(authClient.getClient());
 
   @Test
   void restrictedAccess() {
@@ -47,11 +48,14 @@ class AuthControllerIT {
   void accessTokenTimeout() throws InterruptedException {
     authClient.login(AuthDataFactory.createProvider1());
 
-    Thread.sleep(TestConfig.getInstance().getAccessTokenTimeout() * 1000L);
+    Config config = ConfigProvider.getConfig();
+    int accessTokenTimeout =
+        config.getOptionalValue("auth.accessToken.timeout", Integer.class).orElse(10);
+    Thread.sleep(accessTokenTimeout * 1000L);
 
-    ErrorResponse error = restrictedClient.getAsError();
+    HttpResponse<?> response = restrictedClient.getAsRaw();
 
-    assertEquals(Status.UNAUTHORIZED.getStatusCode(), error.getStatusCode());
+    assertEquals(Status.UNAUTHORIZED.getStatusCode(), response.statusCode());
   }
 
   @Test
