@@ -29,10 +29,8 @@
   "[yaml]": {
     "editor.defaultFormatter": "redhat.vscode-yaml"
   },
-  "[sql]": {
-    "editor.defaultFormatter": "mtxr.sqltools"
-  },
   "editor.formatOnSave": true,
+  "java.configuration.updateBuildConfiguration": "automatic",
   "java.test.config": {
     "vmArgs": [
       "-Dquarkus.http.test-host=localhost",
