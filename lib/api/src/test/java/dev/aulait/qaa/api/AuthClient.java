@@ -8,13 +8,18 @@ import java.net.CookiePolicy;
 import java.net.HttpCookie;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.time.Duration;
 import lombok.Getter;
 
 public class AuthClient {
 
   @Getter private String accessToken;
   private CookieManager cookieManager = new CookieManager(null, CookiePolicy.ACCEPT_ALL);
-  private HttpClient httpClient = HttpClient.newBuilder().cookieHandler(cookieManager).build();
+  private HttpClient httpClient =
+      HttpClient.newBuilder()
+          .cookieHandler(cookieManager)
+          .connectTimeout(Duration.ofMillis(5000L))
+          .build();
 
   @Getter
   private RestClient client =
