@@ -31,6 +31,10 @@ public class AuthClient {
               "Authorization", () -> accessToken != null ? "Bearer " + accessToken : null)
           .build();
 
+  public LoginResponse login(String username, String password) {
+    return login(new LoginRequest(username, password));
+  }
+
   public LoginResponse login(LoginRequest request) {
     LoginResponse response = client.post(BASE_PATH + LOGIN_PATH, request, LoginResponse.class);
     accessToken = response.getAccessToken();
