@@ -8,9 +8,8 @@ import jakarta.inject.Inject;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.keycloak.admin.client.Keycloak;
-import org.keycloak.authorization.client.AuthzClient;
-import org.keycloak.authorization.client.Configuration;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.UserRepresentation;
 
@@ -30,7 +29,11 @@ public class KeycloakAuthService {
 
   @Inject
   public KeycloakAuthService(
-      AuthzClient authzClient,
+      @ConfigProperty(name = "auth.token-endpoint") String tokenEndpoint,
+      @ConfigProperty(name = "auth.realm") String realm,
+      @ConfigProperty(name = "quarkus.keycloak.admin-client.server-url") String authServerUrl,
+      @ConfigProperty(name = "quarkus.oidc.client-id") String clientId,
+      @ConfigProperty(name = "quarkus.oidc.credentials.secret") String clientSecret,
       Keycloak keycloak,
       KeycloakTokenClient tokenClient,
       SecurityIdentity identity,
@@ -39,13 +42,11 @@ public class KeycloakAuthService {
     this.tokenClient = tokenClient;
     this.identity = identity;
     this.authHttpClient = authHttpClient;
-
-    Configuration config = authzClient.getConfiguration();
-    this.realm = config.getRealm();
-    this.clientId = config.getResource();
-    this.clientSecret = (String) config.getCredentials().get("secret");
-    this.tokenEndpoint = authzClient.getServerConfiguration().getTokenEndpoint();
-    this.authServerUrl = config.getAuthServerUrl();
+    this.realm = realm;
+    this.clientId = clientId;
+    this.clientSecret = clientSecret;
+    this.tokenEndpoint = tokenEndpoint;
+    this.authServerUrl = authServerUrl;
   }
 
   public AccessTokenResponse login(LoginRequest request, String dpopProof) {

@@ -3,7 +3,7 @@ import messageStore from '$lib/arch/global/MessageStore';
 import { Api, type HttpResponse, type RequestParams } from './Api';
 import accessTokenStore from '../auth/AccessTokenStore';
 import { get } from 'svelte/store';
-import { buildDPoPProof, updateNonce } from '../auth/DPoPProof';
+import { buildDPoPProof, updateNonce, type DPoPOverrides } from '../auth/DPoPProof';
 import SessionManager from '../auth/SessionManager';
 
 type FetchFn = typeof globalThis.fetch;
@@ -43,19 +43,24 @@ export default class ApiHandler {
   static getApi(
     fetch: FetchFn,
     params: RequestParams = {},
-    accessToken?: string | null
+    accessToken?: string | null,
+    dpopOverrides?: DPoPOverrides
   ): Api<unknown> {
     const baseUrl = this.getBaseUrl();
     return new Api({
       baseUrl,
       baseApiParams: params,
-      customFetch: this.createDPoPFetch(fetch, accessToken)
+      customFetch: this.createDPoPFetch(fetch, accessToken, dpopOverrides)
     });
   }
 
-  private static createDPoPFetch(baseFetch: FetchFn, accessToken?: string | null): FetchFn {
+  private static createDPoPFetch(
+    baseFetch: FetchFn,
+    accessToken?: string | null,
+    dpopOverrides?: DPoPOverrides
+  ): FetchFn {
     return async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-      const dpopProof = await buildDPoPProof(input, init, accessToken ?? undefined);
+      const dpopProof = await buildDPoPProof(input, init, accessToken ?? undefined, dpopOverrides);
 
       const headers = new Headers(init?.headers);
       headers.set('DPoP', dpopProof);
@@ -76,7 +81,12 @@ export default class ApiHandler {
           .json()
           .catch(() => null);
         if (body?.error === 'use_dpop_nonce') {
-          const retryProof = await buildDPoPProof(input, init, accessToken ?? undefined);
+          const retryProof = await buildDPoPProof(
+            input,
+            init,
+            accessToken ?? undefined,
+            dpopOverrides
+          );
           headers.set('DPoP', retryProof);
           return baseFetch(input, { ...init, headers });
         }

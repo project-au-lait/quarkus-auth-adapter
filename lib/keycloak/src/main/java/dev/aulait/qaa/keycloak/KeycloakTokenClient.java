@@ -13,6 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.keycloak.authorization.client.util.HttpResponseException;
 import org.keycloak.representations.AccessTokenResponse;
 
 @ApplicationScoped
@@ -65,8 +66,11 @@ public class KeycloakTokenClient {
       }
 
       if (response.statusCode() < 200 || response.statusCode() >= 300) {
-        throw new IllegalStateException(
-            "Token request failed: " + response.statusCode() + " " + response.body());
+        throw new HttpResponseException(
+            "Token request failed",
+            response.statusCode(),
+            response.body(),
+            response.body().getBytes(StandardCharsets.UTF_8));
       }
 
       return objectMapper.readValue(response.body(), AccessTokenResponse.class);

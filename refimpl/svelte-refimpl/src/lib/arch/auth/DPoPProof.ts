@@ -7,17 +7,25 @@ export function updateNonce(nonce: string): void {
   serverNonce = nonce;
 }
 
+export interface DPoPOverrides {
+  htu?: string;
+  htm?: string;
+}
+
 export async function buildDPoPProof(
   input: RequestInfo | URL,
   init?: RequestInit,
-  accessToken?: string
+  accessToken?: string,
+  overrides?: DPoPOverrides
 ): Promise<string> {
   const kp = await getKeyPair();
   const jwk = await getJwk();
 
   const url = input instanceof Request ? new URL(input.url) : new URL(input.toString());
-  const htu = `${url.origin}${url.pathname}`;
-  const htm = (input instanceof Request ? input.method : (init?.method ?? 'GET')).toUpperCase();
+  const htu = overrides?.htu ?? `${url.origin}${url.pathname}`;
+  const htm =
+    overrides?.htm ??
+    (input instanceof Request ? input.method : (init?.method ?? 'GET')).toUpperCase();
   const ath = accessToken ? await computeAth(accessToken) : undefined;
 
   const header = {
