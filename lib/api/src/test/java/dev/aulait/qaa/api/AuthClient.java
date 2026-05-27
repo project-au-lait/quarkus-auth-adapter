@@ -41,6 +41,10 @@ public class AuthClient {
     return response;
   }
 
+  public ErrorResponse loginWithError(String username, String password) {
+    return loginWithError(new LoginRequest(username, password));
+  }
+
   public ErrorResponse loginWithError(LoginRequest request) {
     return client.post(BASE_PATH + LOGIN_PATH, request, ErrorResponse.class);
   }
