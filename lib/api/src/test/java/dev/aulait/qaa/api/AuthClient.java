@@ -54,39 +54,25 @@ public class AuthClient {
             .build();
   }
 
-  public void prepareDPoP(String htm, String htu) {
-    this.nextHtm = htm;
-    this.nextHtu = htu;
-    this.nextIncludeAuth = true;
-  }
-
   public LoginResponse login(LoginRequest request) {
-    nextHtm = "POST";
-    nextHtu = tokenEndpoint;
-    nextIncludeAuth = true;
+    prepareDPoPWithAuth("POST", tokenEndpoint);
     LoginResponse response = client.post(BASE_PATH + LOGIN_PATH, request, LoginResponse.class);
     accessToken = response.getAccessToken();
     return response;
   }
 
   public ErrorResponse loginWithError(LoginRequest request) {
-    nextHtm = "POST";
-    nextHtu = tokenEndpoint;
-    nextIncludeAuth = true;
+    prepareDPoPWithAuth("POST", tokenEndpoint);
     return client.post(BASE_PATH + LOGIN_PATH, request, ErrorResponse.class);
   }
 
   public MeResponse me() {
-    nextHtm = "GET";
-    nextHtu = resolveUrl(BASE_PATH + ME_PATH);
-    nextIncludeAuth = true;
+    prepareDPoPWithAuth("GET", UrlUtils.resolve(client.getBaseUrl(), BASE_PATH + ME_PATH));
     return client.get(BASE_PATH + ME_PATH, MeResponse.class);
   }
 
   public LoginResponse refreshToken() {
-    nextHtm = "POST";
-    nextHtu = tokenEndpoint;
-    nextIncludeAuth = false;
+    prepareDPoPWithoutAuth("POST", tokenEndpoint);
     LoginResponse response = client.get(BASE_PATH + REFRESH_TOKEN_PATH, LoginResponse.class);
     accessToken = response.getAccessToken();
     return response;
@@ -102,17 +88,19 @@ public class AuthClient {
 
     cookieManager.getCookieStore().add(baseUri, cookie);
 
-    nextHtm = "POST";
-    nextHtu = tokenEndpoint;
-    nextIncludeAuth = false;
+    prepareDPoPWithoutAuth("POST", tokenEndpoint);
     return client.get(BASE_PATH + REFRESH_TOKEN_PATH, ErrorResponse.class);
   }
 
-  private String resolveUrl(String path) {
-    String base = client.getBaseUrl();
-    if (base.endsWith("/") && path.startsWith("/")) {
-      return base + path.substring(1);
-    }
-    return base + path;
+  public void prepareDPoPWithAuth(String htm, String htu) {
+    this.nextHtm = htm;
+    this.nextHtu = htu;
+    this.nextIncludeAuth = true;
+  }
+
+  private void prepareDPoPWithoutAuth(String htm, String htu) {
+    this.nextHtm = htm;
+    this.nextHtu = htu;
+    this.nextIncludeAuth = false;
   }
 }

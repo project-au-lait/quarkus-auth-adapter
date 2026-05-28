@@ -21,6 +21,7 @@ import org.keycloak.representations.AccessTokenResponse;
 public class KeycloakTokenClient {
 
   private final ObjectMapper objectMapper;
+  private final HttpClient httpClient = HttpClient.newHttpClient();
 
   public AccessTokenResponse request(
       String tokenEndpoint, Map<String, String> params, String dpopProof) {
@@ -54,9 +55,9 @@ public class KeycloakTokenClient {
   }
 
   private AccessTokenResponse send(HttpRequest httpRequest) {
-    try (HttpClient client = HttpClient.newHttpClient()) {
+    try {
       HttpResponse<String> response =
-          client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+          httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
 
       if (response.statusCode() == 401) {
         String nonce = response.headers().firstValue("DPoP-Nonce").orElse(null);

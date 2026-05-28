@@ -1,6 +1,7 @@
 package dev.aulait.qaa.api;
 
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
@@ -8,6 +9,8 @@ import java.security.Signature;
 import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECGenParameterSpec;
 import java.util.Base64;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.UUID;
 
 public class DPoPProofBuilder {
@@ -32,47 +35,75 @@ public class DPoPProofBuilder {
       byte[] x = toUnsignedBytes(pub.getW().getAffineX(), 32);
       byte[] y = toUnsignedBytes(pub.getW().getAffineY(), 32);
 
-      String header =
-          "{\"typ\":\"dpop+jwt\",\"alg\":\"ES256\",\"jwk\":"
-              + "{\"kty\":\"EC\",\"crv\":\"P-256\""
-              + ",\"x\":\""
-              + BASE64URL.encodeToString(x)
-              + "\""
-              + ",\"y\":\""
-              + BASE64URL.encodeToString(y)
-              + "\"}}";
+      Map<String, Object> jwk = new LinkedHashMap<>();
+      jwk.put("kty", "EC");
+      jwk.put("crv", "P-256");
+      jwk.put("x", BASE64URL.encodeToString(x));
+      jwk.put("y", BASE64URL.encodeToString(y));
 
-      StringBuilder payload = new StringBuilder();
-      payload
-          .append("{\"jti\":\"")
-          .append(UUID.randomUUID())
-          .append("\",\"htm\":\"")
-          .append(htm)
-          .append("\",\"htu\":\"")
-          .append(htu)
-          .append("\",\"iat\":")
-          .append(System.currentTimeMillis() / 1000);
+      Map<String, Object> header = new LinkedHashMap<>();
+      header.put("typ", "dpop+jwt");
+      header.put("alg", "ES256");
+      header.put("jwk", jwk);
+
+      Map<String, Object> payload = new LinkedHashMap<>();
+      payload.put("jti", UUID.randomUUID().toString());
+      payload.put("htm", htm);
+      payload.put("htu", htu);
+      payload.put("iat", System.currentTimeMillis() / 1000);
 
       if (accessToken != null) {
-        byte[] ath = MessageDigest.getInstance("SHA-256").digest(accessToken.getBytes("UTF-8"));
-        payload.append(",\"ath\":\"").append(BASE64URL.encodeToString(ath)).append("\"");
+        byte[] ath =
+            MessageDigest.getInstance("SHA-256")
+                .digest(accessToken.getBytes(StandardCharsets.UTF_8));
+        payload.put("ath", BASE64URL.encodeToString(ath));
       }
 
-      payload.append("}");
-
-      String encodedHeader = BASE64URL.encodeToString(header.getBytes("UTF-8"));
-      String encodedPayload = BASE64URL.encodeToString(payload.toString().getBytes("UTF-8"));
+      String encodedHeader =
+          BASE64URL.encodeToString(toJson(header).getBytes(StandardCharsets.UTF_8));
+      String encodedPayload =
+          BASE64URL.encodeToString(toJson(payload).getBytes(StandardCharsets.UTF_8));
       String signingInput = encodedHeader + "." + encodedPayload;
 
       Signature sig = Signature.getInstance("SHA256withECDSAinP1363Format");
       sig.initSign(keyPair.getPrivate());
-      sig.update(signingInput.getBytes("UTF-8"));
+      sig.update(signingInput.getBytes(StandardCharsets.UTF_8));
       byte[] signature = sig.sign();
 
       return signingInput + "." + BASE64URL.encodeToString(signature);
     } catch (Exception e) {
       throw new IllegalStateException("Failed to build DPoP proof", e);
     }
+  }
+
+  @SuppressWarnings("unchecked")
+  private static String toJson(Map<String, Object> map) {
+    StringBuilder sb = new StringBuilder("{");
+    boolean first = true;
+    for (Map.Entry<String, Object> entry : map.entrySet()) {
+      if (!first) sb.append(",");
+      first = false;
+      sb.append("\"").append(escapeJson(entry.getKey())).append("\":");
+      Object value = entry.getValue();
+      if (value instanceof Map) {
+        sb.append(toJson((Map<String, Object>) value));
+      } else if (value instanceof Number) {
+        sb.append(value);
+      } else {
+        sb.append("\"").append(escapeJson(value.toString())).append("\"");
+      }
+    }
+    sb.append("}");
+    return sb.toString();
+  }
+
+  private static String escapeJson(String value) {
+    return value
+        .replace("\\", "\\\\")
+        .replace("\"", "\\\"")
+        .replace("\n", "\\n")
+        .replace("\r", "\\r")
+        .replace("\t", "\\t");
   }
 
   private static byte[] toUnsignedBytes(BigInteger value, int length) {
