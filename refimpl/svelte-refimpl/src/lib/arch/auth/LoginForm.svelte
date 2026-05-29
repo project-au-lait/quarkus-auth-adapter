@@ -1,8 +1,7 @@
 <script lang="ts">
-  import ApiHandler from '$lib/arch/api/ApiHandler';
-  import type { LoginRequest, LoginResponse } from '$lib/arch/api/Api';
+  import SessionManager from './SessionManager';
+  import type { LoginRequest } from '$lib/arch/api/Api';
   import messageStore from '../global/MessageStore';
-  import accessTokenStore from './AccessTokenStore';
 
   const loginRequest: LoginRequest = {
     userName: 'provider-1',
@@ -10,20 +9,8 @@
   };
 
   async function login() {
-    const res = await ApiHandler.handle<LoginResponse>(
-      fetch,
-      (api) => api.auth.loginCreate(loginRequest),
-      {
-        credentials: 'include'
-      }
-    );
-
-    if (res) {
-      accessTokenStore.set(res.accessToken);
-      messageStore.show('Login succeeded.');
-    } else {
-      messageStore.show('Login failed.');
-    }
+    const success = await SessionManager.login(fetch, loginRequest);
+    messageStore.show(success ? 'Login succeeded.' : 'Login failed.');
   }
 </script>
 

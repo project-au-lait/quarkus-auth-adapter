@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 class AuthControllerIT {
 
   AuthClient authClient = new AuthClient();
-  RestrictedClient restrictedClient = new RestrictedClient(authClient.getClient());
+  RestrictedClient restrictedClient = new RestrictedClient(authClient);
 
   @Test
   void restrictedAccess() {

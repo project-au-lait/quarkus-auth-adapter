@@ -10,7 +10,7 @@
   async function submit() {
     const data: ResetPasswordRequest = { code, newPassword };
 
-    const result = await ApiHandler.handle<void>(fetch, (api) =>
+    const result = await ApiHandler.callAuthenticated<void>(fetch, (api) =>
       api.auth.resetPasswordCreate(data)
     );
 

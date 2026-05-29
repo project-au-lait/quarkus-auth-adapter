@@ -2,6 +2,7 @@ package dev.aulait.qaa.api;
 
 import jakarta.ws.rs.CookieParam;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.MediaType;
@@ -19,6 +20,8 @@ public interface AuthController {
   static final String FORGOT_PASSWORD_PATH = "/forgot-password";
   static final String RESET_PASSWORD_PATH = "/reset-password";
   static final String REFRESH_TOKEN_COOKIE_NAME = "refreshToken";
+  static final String DPOP_HEADER_NAME = "DPoP";
+  static final String DPOP_NONCE_HEADER_NAME = "DPoP-Nonce";
 
   @POST
   @Path(LOGIN_PATH)
@@ -29,7 +32,7 @@ public interface AuthController {
           @Content(
               mediaType = MediaType.APPLICATION_JSON,
               schema = @Schema(implementation = LoginResponse.class)))
-  Response login(LoginRequest request);
+  Response login(LoginRequest request, @HeaderParam(DPOP_HEADER_NAME) String dpopProof);
 
   @GET
   @Path(ME_PATH)
@@ -51,7 +54,9 @@ public interface AuthController {
           @Content(
               mediaType = MediaType.APPLICATION_JSON,
               schema = @Schema(implementation = LoginResponse.class)))
-  Response refreshToken(@CookieParam(REFRESH_TOKEN_COOKIE_NAME) String refreshToken);
+  Response refreshToken(
+      @CookieParam(REFRESH_TOKEN_COOKIE_NAME) String refreshToken,
+      @HeaderParam(DPOP_HEADER_NAME) String dpopProof);
 
   @POST
   @Path(FORGOT_PASSWORD_PATH)

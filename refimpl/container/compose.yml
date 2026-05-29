@@ -12,6 +12,19 @@ services:
       - ${AUTH_PORT}:8080
       - ${AUTH_PORT_SSL}:8543
 
+  keycloak-proxy:
+    image: nginx:alpine
+    environment:
+      AUTH_PORT: ${AUTH_PORT}
+    volumes:
+      - ../../lib/keycloak/src/main/resources/nginx/default.conf.template:/etc/nginx/templates/default.conf.template:ro
+    depends_on:
+      - keycloak
+
+  # backend environment variables when running in Docker:
+  #   AUTH_TOKEN_ENDPOINT: http://keycloak-proxy/realms/${AUTH_REALM}/protocol/openid-connect/token
+  #   AUTH_PUBLIC_ISSUER_URL: http://localhost:${AUTH_PORT}/realms/${AUTH_REALM}
+
   healthchecker:
     command: ["tail", "-f", "/dev/null"]
     image: alpine/curl

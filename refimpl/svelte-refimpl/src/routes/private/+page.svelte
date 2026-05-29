@@ -2,7 +2,7 @@
   import ApiHandler from '$lib/arch/api/ApiHandler';
 
   async function callApi() {
-    await ApiHandler.handle<string>(fetch, (api) => api.restricted.restrictedList());
+    await ApiHandler.callAuthenticated<string>(fetch, (api) => api.restricted.restrictedList());
   }
 </script>
 

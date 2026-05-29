@@ -10,10 +10,19 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.time.Duration;
 import lombok.Getter;
+import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.ConfigProvider;
 
 public class AuthClient {
 
   @Getter private String accessToken;
+  private final DPoPProofBuilder dpopProofBuilder = new DPoPProofBuilder();
+  private String nextHtm;
+  private String nextHtu;
+  private boolean nextIncludeAuth = true;
+
+  @Getter private final String tokenEndpoint;
+
   private CookieManager cookieManager = new CookieManager(null, CookiePolicy.ACCEPT_ALL);
   private HttpClient httpClient =
       HttpClient.newBuilder()
@@ -21,40 +30,52 @@ public class AuthClient {
           .connectTimeout(Duration.ofMillis(5000L))
           .build();
 
-  @Getter
-  private RestClient client =
-      RestClient.builder()
-          .httpClient(httpClient)
-          .quarkus()
-          .allowNonSuccessStatus(true)
-          .headerSupplier(
-              "Authorization", () -> accessToken != null ? "Bearer " + accessToken : null)
-          .build();
+  @Getter private RestClient client;
 
-  public LoginResponse login(String username, String password) {
-    return login(new LoginRequest(username, password));
+  public AuthClient() {
+    Config config = ConfigProvider.getConfig();
+    String authPort = config.getOptionalValue("auth.port", String.class).orElse("8085");
+    String authRealm = config.getOptionalValue("auth.realm", String.class).orElse("qaa-realm");
+    tokenEndpoint =
+        "http://localhost:" + authPort + "/realms/" + authRealm + "/protocol/openid-connect/token";
+
+    client =
+        RestClient.builder()
+            .httpClient(httpClient)
+            .quarkus()
+            .allowNonSuccessStatus(true)
+            .headerSupplier(
+                "Authorization",
+                () -> nextIncludeAuth && accessToken != null ? "DPoP " + accessToken : null)
+            .headerSupplier(
+                "DPoP",
+                () ->
+                    dpopProofBuilder.build(nextHtm, nextHtu, nextIncludeAuth ? accessToken : null))
+            .build();
   }
 
   public LoginResponse login(LoginRequest request) {
+    prepareDPoPWithAuth("POST", tokenEndpoint);
     LoginResponse response = client.post(BASE_PATH + LOGIN_PATH, request, LoginResponse.class);
     accessToken = response.getAccessToken();
     return response;
   }
 
-  public ErrorResponse loginWithError(String username, String password) {
-    return loginWithError(new LoginRequest(username, password));
-  }
-
   public ErrorResponse loginWithError(LoginRequest request) {
+    prepareDPoPWithAuth("POST", tokenEndpoint);
     return client.post(BASE_PATH + LOGIN_PATH, request, ErrorResponse.class);
   }
 
   public MeResponse me() {
+    prepareDPoPWithAuth("GET", UrlUtils.resolve(client.getBaseUrl(), BASE_PATH + ME_PATH));
     return client.get(BASE_PATH + ME_PATH, MeResponse.class);
   }
 
   public LoginResponse refreshToken() {
-    return client.get(BASE_PATH + REFRESH_TOKEN_PATH, LoginResponse.class);
+    prepareDPoPWithoutAuth("POST", tokenEndpoint);
+    LoginResponse response = client.get(BASE_PATH + REFRESH_TOKEN_PATH, LoginResponse.class);
+    accessToken = response.getAccessToken();
+    return response;
   }
 
   public ErrorResponse refreshTokenWithError() {
@@ -67,6 +88,19 @@ public class AuthClient {
 
     cookieManager.getCookieStore().add(baseUri, cookie);
 
+    prepareDPoPWithoutAuth("POST", tokenEndpoint);
     return client.get(BASE_PATH + REFRESH_TOKEN_PATH, ErrorResponse.class);
+  }
+
+  public void prepareDPoPWithAuth(String htm, String htu) {
+    this.nextHtm = htm;
+    this.nextHtu = htu;
+    this.nextIncludeAuth = true;
+  }
+
+  private void prepareDPoPWithoutAuth(String htm, String htu) {
+    this.nextHtm = htm;
+    this.nextHtu = htu;
+    this.nextIncludeAuth = false;
   }
 }

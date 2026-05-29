@@ -3,72 +3,100 @@ import messageStore from '$lib/arch/global/MessageStore';
 import { Api, type HttpResponse, type RequestParams } from './Api';
 import accessTokenStore from '../auth/AccessTokenStore';
 import { get } from 'svelte/store';
+import { buildDPoPProof, updateNonce, type DPoPOverrides } from '../auth/DPoPProof';
+import SessionManager from '../auth/SessionManager';
+
+type FetchFn = typeof globalThis.fetch;
 
 export default class ApiHandler {
-	static getApi(
-		fetch: (input: RequestInfo | URL, init?: RequestInit | undefined) => Promise<Response>,
-		params: RequestParams = {},
-		accessToken?: string | null
-	): Api<unknown> {
-		const baseUrl = env.PUBLIC_BACKEND_URL || new URL(window.location.href).origin;
+  static async callAuthenticated<D>(
+    fetch: FetchFn,
+    handler: (api: Api<unknown>) => Promise<HttpResponse<D, unknown>>,
+    params: RequestParams = {}
+  ): Promise<D | undefined> {
+    const accessToken = get(accessTokenStore);
+    const api = this.getApi(fetch, params, accessToken);
 
-		const baseApiParams: RequestParams = accessToken
-			? {
-					secure: true,
-					headers: {
-						Authorization: `Bearer ${accessToken}`
-					},
-					...params
-				}
-			: {
-					...params
-				};
+    // TODO show loading
 
-		return new Api({
-			baseUrl,
-			baseApiParams,
-			customFetch: fetch
-		});
-	}
+    const response = await handler(api);
 
-	static async handle<D>(
-		fetch: (input: RequestInfo | URL, init?: RequestInit | undefined) => Promise<Response>,
-		handler: (api: Api<unknown>) => Promise<HttpResponse<D, unknown>>,
-		params: RequestParams = {}
-	): Promise<D | undefined> {
-		const accessToken = get(accessTokenStore);
-		const api = this.getApi(fetch, params, accessToken);
+    if (response.ok) {
+      return response.data || (response.text() as D);
+    } else if (response.status === 401) {
+      await SessionManager.refreshAccessToken(fetch);
+      const newAccessToken = get(accessTokenStore);
+      if (newAccessToken) {
+        const retryApi = this.getApi(fetch, params, newAccessToken);
+        const retryResponse = await handler(retryApi);
+        if (retryResponse.ok) {
+          return retryResponse.data || (retryResponse.text() as D);
+        }
+      }
+    } else {
+      // TODO error handling
+      messageStore.show(response.statusText);
+      return undefined;
+    }
+  }
 
-		// TODO show loading
+  static getApi(
+    fetch: FetchFn,
+    params: RequestParams = {},
+    accessToken?: string | null,
+    dpopOverrides?: DPoPOverrides
+  ): Api<unknown> {
+    const baseUrl = this.getBaseUrl();
+    return new Api({
+      baseUrl,
+      baseApiParams: params,
+      customFetch: this.createDPoPFetch(fetch, accessToken, dpopOverrides)
+    });
+  }
 
-		const response = await handler(api);
+  private static createDPoPFetch(
+    baseFetch: FetchFn,
+    accessToken?: string | null,
+    dpopOverrides?: DPoPOverrides
+  ): FetchFn {
+    return async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+      const dpopProof = await buildDPoPProof(input, init, accessToken ?? undefined, dpopOverrides);
 
-		if (response.ok) {
-			return response.data || (response.text() as D);
-		} else if (response.status === 401) {
-			await this.refreshAccessToken(fetch);
-		} else {
-			// TODO error handling
-			messageStore.show(response.statusText);
-			return undefined;
-		}
-	}
+      const headers = new Headers(init?.headers);
+      headers.set('DPoP', dpopProof);
+      if (accessToken) {
+        headers.set('Authorization', `DPoP ${accessToken}`);
+      }
 
-	static async refreshAccessToken(
-		fetch: (input: RequestInfo | URL, init?: RequestInit | undefined) => Promise<Response>
-	): Promise<void> {
-		console.log('Refreshing access token...');
+      const response = await baseFetch(input, { ...init, headers });
 
-		const api = this.getApi(fetch, { credentials: 'include' });
-		const response = await api.auth.refreshTokenList();
+      const nonce = response.headers.get('DPoP-Nonce');
+      if (nonce) {
+        updateNonce(nonce);
+      }
 
-		if (response.ok) {
-			const newAccessToken = response.data.accessToken;
-			accessTokenStore.set(newAccessToken);
-			console.log('Access token refreshed successfully:', newAccessToken);
-		} else {
-			accessTokenStore.set(null);
-			console.error('Failed to refresh access token:', response.status, response.statusText);
-		}
-	}
+      if (response.status === 401 && nonce) {
+        const body = await response
+          .clone()
+          .json()
+          .catch(() => null);
+        if (body?.error === 'use_dpop_nonce') {
+          const retryProof = await buildDPoPProof(
+            input,
+            init,
+            accessToken ?? undefined,
+            dpopOverrides
+          );
+          headers.set('DPoP', retryProof);
+          return baseFetch(input, { ...init, headers });
+        }
+      }
+
+      return response;
+    };
+  }
+
+  private static getBaseUrl(): string {
+    return env.PUBLIC_BACKEND_URL || new URL(window.location.href).origin;
+  }
 }
