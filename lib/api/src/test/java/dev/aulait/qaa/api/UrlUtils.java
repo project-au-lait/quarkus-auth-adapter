@@ -8,6 +8,9 @@ public class UrlUtils {
     if (baseUrl.endsWith("/") && path.startsWith("/")) {
       return baseUrl + path.substring(1);
     }
+    if (!baseUrl.endsWith("/") && !path.startsWith("/")) {
+      return baseUrl + "/" + path;
+    }
     return baseUrl + path;
   }
 }
