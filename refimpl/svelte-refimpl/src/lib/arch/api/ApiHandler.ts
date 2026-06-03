@@ -21,9 +21,7 @@ export default class ApiHandler {
     const baseApiParams: RequestParams = accessToken
       ? {
           secure: true,
-          headers: {
-            Authorization: isDPoPMode() ? `DPoP ${accessToken}` : `Bearer ${accessToken}`
-          },
+          headers: isDPoPMode() ? {} : { Authorization: `Bearer ${accessToken}` },
           ...params
         }
       : {
