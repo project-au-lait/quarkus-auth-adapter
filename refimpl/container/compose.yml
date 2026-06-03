@@ -12,6 +12,15 @@ services:
       - ${AUTH_PORT}:8080
       - ${AUTH_PORT_SSL}:8543
 
+  keycloak-proxy:
+    image: nginx:alpine
+    environment:
+      AUTH_PORT: ${AUTH_PORT}
+    volumes:
+      - ./target/nginx/default.conf.template:/etc/nginx/templates/default.conf.template:ro
+    depends_on:
+      - keycloak
+
   healthchecker:
     command: ["tail", "-f", "/dev/null"]
     image: alpine/curl
