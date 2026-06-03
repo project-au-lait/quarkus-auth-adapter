@@ -39,7 +39,18 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] }
+      use: { ...devices['Desktop Chrome'] },
+      testIgnore: /dpop\.spec/
+    },
+    {
+      name: 'chromium-dpop',
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5174',
+        actionTimeout: 10000,
+        navigationTimeout: 10000
+      },
+      testMatch: /dpop\.spec/
     }
 
     /* Scope out temporarily */
@@ -72,12 +83,18 @@ export default defineConfig({
     //   name: 'Google Chrome',
     //   use: { ...devices['Desktop Chrome'], channel: 'chrome' },
     // },
-  ]
+  ],
 
-  /* Run your local dev server before starting the tests */
-  // webServer: {
-  //   command: 'npm run start',
-  //   url: 'http://127.0.0.1:3000',
-  //   reuseExistingServer: !process.env.CI,
-  // },
+  webServer: {
+    command: 'pnpm --dir ../svelte-refimpl run dev -- --port 5174 --strictPort',
+    url: 'http://localhost:5174',
+    reuseExistingServer: false,
+    timeout: 30000,
+    env: {
+      ...process.env,
+      PUBLIC_AUTH_MODE: 'dpop',
+      PUBLIC_BACKEND_URL: 'http://localhost:8080',
+      PUBLIC_TOKEN_ENDPOINT: 'http://localhost:8085/realms/qaa-realm/protocol/openid-connect/token'
+    }
+  }
 });
