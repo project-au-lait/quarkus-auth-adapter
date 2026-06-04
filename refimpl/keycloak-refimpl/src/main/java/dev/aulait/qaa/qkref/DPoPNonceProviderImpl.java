@@ -1,36 +1,45 @@
 package dev.aulait.qaa.qkref;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import io.quarkus.oidc.DPoPNonceProvider;
+import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import java.security.SecureRandom;
 import java.util.Base64;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 @ApplicationScoped
 public class DPoPNonceProviderImpl implements DPoPNonceProvider {
 
-  private static final int NONCE_BYTE_LENGTH = 22;
-  private static final SecureRandom RANDOM = new SecureRandom();
-  private final Set<String> validNonces = ConcurrentHashMap.newKeySet();
+  @ConfigProperty(name = "qaa.dpop.nonce-ttl-seconds")
+  long nonceTtlSeconds;
 
-  private volatile String currentNonce = generateNonce();
+  private final SecureRandom secureRandom = new SecureRandom();
+  private Cache<String, Boolean> validNonces;
+
+  @PostConstruct
+  void init() {
+    validNonces = Caffeine.newBuilder()
+        .expireAfterWrite(nonceTtlSeconds, TimeUnit.SECONDS)
+        .build();
+  }
 
   @Override
   public String getNonce() {
-    return currentNonce;
+    byte[] bytes = new byte[32];
+    secureRandom.nextBytes(bytes);
+    String nonce = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+    validNonces.put(nonce, Boolean.TRUE);
+    return nonce;
   }
 
   @Override
   public boolean isValid(String nonce) {
-    return nonce != null && validNonces.contains(nonce);
-  }
-
-  private String generateNonce() {
-    byte[] bytes = new byte[NONCE_BYTE_LENGTH];
-    RANDOM.nextBytes(bytes);
-    String nonce = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
-    validNonces.add(nonce);
-    return nonce;
+    if (nonce == null) {
+      return false;
+    }
+    return validNonces.getIfPresent(nonce) != null;
   }
 }
