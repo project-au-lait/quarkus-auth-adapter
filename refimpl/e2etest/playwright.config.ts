@@ -8,6 +8,9 @@ import { defineConfig, devices } from '@playwright/test';
 // import path from 'path';
 // dotenv.config({ path: path.resolve(__dirname, '.env') });
 
+const frontendPort = 5173;
+const dpopPort = frontendPort + 1;
+
 /**
  * See https://playwright.dev/docs/test-configuration.
  */
@@ -46,7 +49,7 @@ export default defineConfig({
       name: 'chromium-dpop',
       use: {
         ...devices['Desktop Chrome'],
-        baseURL: 'http://localhost:5174',
+        baseURL: `http://localhost:${dpopPort}`,
         actionTimeout: 10000,
         navigationTimeout: 10000
       },
@@ -83,18 +86,5 @@ export default defineConfig({
     //   name: 'Google Chrome',
     //   use: { ...devices['Desktop Chrome'], channel: 'chrome' },
     // },
-  ],
-
-  webServer: {
-    command: 'pnpm --dir ../svelte-refimpl run dev -- --port 5174 --strictPort',
-    url: 'http://localhost:5174',
-    reuseExistingServer: false,
-    timeout: 30000,
-    env: {
-      ...process.env,
-      PUBLIC_AUTH_MODE: 'dpop',
-      PUBLIC_BACKEND_URL: 'http://localhost:8080',
-      PUBLIC_TOKEN_ENDPOINT: 'http://localhost:8085/realms/qaa-realm/protocol/openid-connect/token'
-    }
-  }
+  ]
 });
