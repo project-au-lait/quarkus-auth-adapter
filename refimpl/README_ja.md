@@ -4,7 +4,7 @@
 各ディレクトリには以下の資材を格納しています。
 
 - container
-  Keycloak、及び SMTP サーバー([Mailpit](https://mailpit.axllent.org/))の コンテナ
+  Keycloak、及び SMTP サーバー([Mailpit](https://mailpit.axllent.org/))の コンテナ、DPoP サポート用の nginx リバースプロキシ
 - keycloak-refimpl
   IAM Provider として Keycloak を使用した Backend
 - svelte-refimpl
