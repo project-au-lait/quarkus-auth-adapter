@@ -21,6 +21,9 @@ services:
     depends_on:
       - keycloak
 
+  # backend environment variables when running in Docker:
+  #   AUTH_TOKEN_ENDPOINT: http://keycloak-proxy/realms/${AUTH_REALM}/protocol/openid-connect/token
+
   healthchecker:
     command: ["tail", "-f", "/dev/null"]
     image: alpine/curl
