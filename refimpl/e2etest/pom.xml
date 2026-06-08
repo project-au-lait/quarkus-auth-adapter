@@ -140,6 +140,18 @@
               </execution>
               <execution>
                 <?m2e ignore?>
+                <id>wait-for-servers</id>
+                <phase>pre-integration-test</phase>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <configuration>
+                  <executable>node</executable>
+                  <commandlineArgs>scripts/wait-for-servers.mjs ${frontend.port} 5174 8080</commandlineArgs>
+                </configuration>
+              </execution>
+              <execution>
+                <?m2e ignore?>
                 <id>pnpm-playwright-test</id>
                 <phase>integration-test</phase>
                 <goals>
