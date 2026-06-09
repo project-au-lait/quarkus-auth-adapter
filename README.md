@@ -1,6 +1,6 @@
 # Quarkus Auth Adapter
 
-Quarkus Auth Adapter (QAA) is a library for implementing Bearer token and DPoP (Demonstration of Proof-of-Possession) authentication APIs in Quarkus.
+Quarkus Auth Adapter (QAA) is a library for implementing Bearer token authentication APIs in Quarkus.
 
 The login flow using QAA is as follows:
 
