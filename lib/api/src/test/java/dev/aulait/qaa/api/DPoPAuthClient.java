@@ -34,7 +34,8 @@ public class DPoPAuthClient {
   public DPoPAuthClient() {
     Config config = ConfigProvider.getConfig();
     int port = config.getOptionalValue("quarkus.http.test-port", Integer.class).orElse(8080);
-    this.baseUrl = "http://localhost:" + port;
+    String restPath = config.getOptionalValue("quarkus.rest.path", String.class).orElse("");
+    this.baseUrl = "http://localhost:" + port + restPath;
     this.tokenEndpoint =
         config
             .getOptionalValue("auth.token-endpoint", String.class)
