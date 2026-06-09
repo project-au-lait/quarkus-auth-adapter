@@ -1,7 +1,7 @@
 let keyPair: CryptoKeyPair | null = null;
 
 export async function getKeyPair(): Promise<CryptoKeyPair> {
-  keyPair ??= await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, [
+  keyPair ??= await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, false, [
     'sign',
     'verify'
   ]);
