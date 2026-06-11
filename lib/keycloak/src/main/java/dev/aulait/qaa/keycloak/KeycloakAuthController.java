@@ -14,6 +14,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.eclipse.microprofile.openapi.annotations.tags.Tags;
@@ -27,6 +28,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 @Path(AuthController.BASE_PATH)
 @Tags(@Tag(name = "Auth Controller"))
 @RequiredArgsConstructor
+@Slf4j
 public class KeycloakAuthController implements AuthController {
 
   private final AuthzClient authzClient;
@@ -146,19 +148,24 @@ public class KeycloakAuthController implements AuthController {
   public Response logout(@CookieParam(REFRESH_TOKEN_COOKIE_NAME) String refreshToken) {
 
     if (refreshToken != null && !refreshToken.isEmpty()) {
-      Configuration config = authzClient.getConfiguration();
-      String realm = authzClient.getConfiguration().getRealm();
+      try {
+        Configuration config = authzClient.getConfiguration();
+        String realm = config.getRealm();
 
-      String logoutEndpoint =
-          config.getAuthServerUrl() + "/realms/" + realm + "/protocol/openid-connect/logout";
+        String logoutEndpoint =
+            config.getAuthServerUrl() + "/realms/" + realm + "/protocol/openid-connect/logout";
 
-      Http http = new Http(config, config.getClientCredentialsProvider());
-      http.post(logoutEndpoint)
-          .authentication()
-          .client()
-          .form()
-          .param("refresh_token", refreshToken)
-          .execute();
+        Http http = new Http(config, config.getClientCredentialsProvider());
+        http.post(logoutEndpoint)
+            .authentication()
+            .client()
+            .form()
+            .param("refresh_token", refreshToken)
+            .execute();
+      } catch (Exception e) {
+        // Do not handle exceptions to ensure that cookies are deleted.
+        log.warn("Keycloak logout request failed", e);
+      }
     }
 
     NewCookie expiredCookie =
