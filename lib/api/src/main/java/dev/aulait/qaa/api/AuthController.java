@@ -19,6 +19,7 @@ public interface AuthController {
   static final String FORGOT_PASSWORD_PATH = "/forgot-password";
   static final String RESET_PASSWORD_PATH = "/reset-password";
   static final String REFRESH_TOKEN_COOKIE_NAME = "refreshToken";
+  static final String LOGOUT_PATH = "/logout";
 
   @POST
   @Path(LOGIN_PATH)
@@ -60,4 +61,9 @@ public interface AuthController {
   @POST
   @Path(RESET_PASSWORD_PATH)
   Response resetPassword(ResetPasswordRequest request);
+
+  @POST
+  @Path(LOGOUT_PATH)
+  @APIResponse(responseCode = "200", description = "Logs out the user and clears the refresh token cookie")
+  Response logout(@CookieParam(REFRESH_TOKEN_COOKIE_NAME) String refreshToken);
 }

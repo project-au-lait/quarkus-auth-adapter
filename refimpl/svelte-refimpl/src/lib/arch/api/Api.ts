@@ -15,12 +15,18 @@ export interface ForgotPasswordRequest {
 }
 
 export interface LoginRequest {
-  userName?: string;
-  password?: string;
+  userName: string;
+  password: string;
 }
 
 export interface LoginResponse {
-  accessToken?: string;
+  accessToken: string;
+}
+
+export interface MeResponse {
+  firstName: string;
+  lastName: string;
+  roles: string[];
 }
 
 export interface ResetPasswordRequest {
@@ -81,7 +87,7 @@ export enum ContentType {
 }
 
 export class HttpClient<SecurityDataType = unknown> {
-  public baseUrl: string = "";
+  public baseUrl: string = "http://localhost:8080";
   private securityData: SecurityDataType | null = null;
   private securityWorker?: ApiConfig<SecurityDataType>["securityWorker"];
   private abortControllers = new Map<CancelToken, AbortController>();
@@ -149,8 +155,12 @@ export class HttpClient<SecurityDataType = unknown> {
       input !== null && typeof input !== "string"
         ? JSON.stringify(input)
         : input,
-    [ContentType.FormData]: (input: any) =>
-      Object.keys(input || {}).reduce((formData, key) => {
+    [ContentType.FormData]: (input: any) => {
+      if (input instanceof FormData) {
+        return input;
+      }
+
+      return Object.keys(input || {}).reduce((formData, key) => {
         const property = input[key];
         formData.append(
           key,
@@ -161,7 +171,8 @@ export class HttpClient<SecurityDataType = unknown> {
               : `${property}`,
         );
         return formData;
-      }, new FormData()),
+      }, new FormData());
+    },
     [ContentType.UrlEncoded]: (input: any) => this.toQueryString(input),
   };
 
@@ -247,13 +258,14 @@ export class HttpClient<SecurityDataType = unknown> {
             : payloadFormatter(body),
       },
     ).then(async (response) => {
-      const r = response.clone() as HttpResponse<T, E>;
+      const r = response as HttpResponse<T, E>;
       r.data = null as unknown as T;
       r.error = null as unknown as E;
 
+      const responseToParse = responseFormat ? response.clone() : response;
       const data = !responseFormat
         ? r
-        : await response[responseFormat]()
+        : await responseToParse[responseFormat]()
             .then((data) => {
               if (r.ok) {
                 r.data = data;
@@ -279,6 +291,7 @@ export class HttpClient<SecurityDataType = unknown> {
 /**
  * @title quarkus-auth-adapter-keycloak-refimpl API
  * @version 0.8-SNAPSHOT
+ * @baseUrl http://localhost:8080
  */
 export class Api<
   SecurityDataType extends unknown,
@@ -295,11 +308,12 @@ export class Api<
       data: ForgotPasswordRequest,
       params: RequestParams = {},
     ) =>
-      this.request<void, any>({
+      this.request<any, any>({
         path: `/auth/forgot-password`,
         method: "POST",
         body: data,
         type: ContentType.Json,
+        format: "json",
         ...params,
       }),
 
@@ -316,6 +330,36 @@ export class Api<
         method: "POST",
         body: data,
         type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Auth Controller
+     * @name LogoutCreate
+     * @request POST:/auth/logout
+     */
+    logoutCreate: (params: RequestParams = {}) =>
+      this.request<any, any>({
+        path: `/auth/logout`,
+        method: "POST",
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Auth Controller
+     * @name GetAuth
+     * @request GET:/auth/me
+     */
+    getAuth: (params: RequestParams = {}) =>
+      this.request<MeResponse, any>({
+        path: `/auth/me`,
+        method: "GET",
         format: "json",
         ...params,
       }),
@@ -346,11 +390,12 @@ export class Api<
       data: ResetPasswordRequest,
       params: RequestParams = {},
     ) =>
-      this.request<void, any>({
+      this.request<any, any>({
         path: `/auth/reset-password`,
         method: "POST",
         body: data,
         type: ContentType.Json,
+        format: "json",
         ...params,
       }),
   };

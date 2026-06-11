@@ -126,6 +126,7 @@ public class KeycloakAuthController implements AuthController {
     return Response.ok().build();
   }
 
+  @Override
   public Response resetPassword(ResetPasswordRequest request) {
     boolean result =
         authHttpClient.resetPassword(
@@ -139,5 +140,34 @@ public class KeycloakAuthController implements AuthController {
     }
 
     return Response.ok().build();
+  }
+  
+  @Override
+  public Response logout(@CookieParam(REFRESH_TOKEN_COOKIE_NAME) String refreshToken) {
+
+    if (refreshToken != null && !refreshToken.isEmpty()) {
+      Configuration config = authzClient.getConfiguration();
+      String realm = authzClient.getConfiguration().getRealm();
+
+      String logoutEndpoint =
+          config.getAuthServerUrl() + "/realms/" + realm + "/protocol/openid-connect/logout";
+
+      Http http = new Http(config, config.getClientCredentialsProvider());
+      http.post(logoutEndpoint)
+          .authentication()
+          .client()
+          .form()
+          .param("refresh_token", refreshToken)
+          .execute();
+    }
+
+    NewCookie expiredCookie =
+        new NewCookie.Builder(REFRESH_TOKEN_COOKIE_NAME)
+            .value("")
+            .maxAge(0)
+            .httpOnly(true)
+            .build();
+
+    return Response.ok().cookie(expiredCookie).build();
   }
 }

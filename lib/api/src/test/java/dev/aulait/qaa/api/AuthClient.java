@@ -57,6 +57,13 @@ public class AuthClient {
     return client.get(BASE_PATH + REFRESH_TOKEN_PATH, LoginResponse.class);
   }
 
+  public HttpCookie getRefreshTokenCookie() {
+    return cookieManager.getCookieStore().getCookies().stream()
+        .filter(c -> REFRESH_TOKEN_COOKIE_NAME.equals(c.getName()))
+        .findFirst()
+        .orElse(null);
+  }
+
   public ErrorResponse refreshTokenWithError() {
     URI baseUri = URI.create(client.getBaseUrl());
 
@@ -68,5 +75,10 @@ public class AuthClient {
     cookieManager.getCookieStore().add(baseUri, cookie);
 
     return client.get(BASE_PATH + REFRESH_TOKEN_PATH, ErrorResponse.class);
+  }
+
+  public void logout() {
+    client.post(BASE_PATH + LOGOUT_PATH, null, String.class);
+    accessToken = null;
   }
 }
