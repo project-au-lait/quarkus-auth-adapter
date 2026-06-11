@@ -93,4 +93,12 @@ class AuthControllerIT {
     assertNull(me.getLastName());
     assertNull(me.getRoles());
   }
+
+  @Test
+  void logout() {
+    authClient.login(AuthDataFactory.createProvider1());
+    authClient.logout();
+
+    assertNull(authClient.getRefreshTokenCookie());
+  }
 }
