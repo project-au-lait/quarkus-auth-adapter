@@ -3,10 +3,12 @@ package dev.aulait.qaa.qkref;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import dev.aulait.qaa.api.DPoPAuthClient;
 import dev.aulait.qaa.api.LoginResponse;
+import dev.aulait.qaa.api.MeResponse;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import java.net.http.HttpResponse;
 import org.junit.jupiter.api.Test;
@@ -15,7 +17,7 @@ import org.junit.jupiter.api.Test;
 class DPoPAuthControllerIT {
 
   @Test
-  void dpopLogin() {
+  void login() {
     DPoPAuthClient client = new DPoPAuthClient();
 
     LoginResponse response = client.login(AuthDataFactory.createProvider1());
@@ -24,17 +26,17 @@ class DPoPAuthControllerIT {
   }
 
   @Test
-  void dpopRefreshToken() {
+  void refreshToken() {
     DPoPAuthClient client = new DPoPAuthClient();
 
     LoginResponse loginResponse = client.login(AuthDataFactory.createProvider1());
-    LoginResponse refreshResponse = client.refreshToken();
+    LoginResponse refreshResponse = client.tokenRefresh();
 
     assertNotEquals(loginResponse.getAccessToken(), refreshResponse.getAccessToken());
   }
 
   @Test
-  void dpopRestrictedAccess() {
+  void restrictedAccess() {
     DPoPAuthClient client = new DPoPAuthClient();
     client.login(AuthDataFactory.createProvider1());
 
@@ -45,7 +47,7 @@ class DPoPAuthControllerIT {
   }
 
   @Test
-  void dpopRestrictedAccessWithoutProofRejected() {
+  void restrictedAccessRejectedWithoutProof() {
     DPoPAuthClient client = new DPoPAuthClient();
     client.login(AuthDataFactory.createProvider1());
 
@@ -55,12 +57,12 @@ class DPoPAuthControllerIT {
   }
 
   @Test
-  void dpopNonceRsRequiresNonce() {
+  void restrictedAccessRequiresNonce() {
     DPoPAuthClient client = new DPoPAuthClient();
     client.login(AuthDataFactory.createProvider1());
 
     // First request without nonce — RS should return 401 with DPoP-Nonce
-    HttpResponse<String> response = client.getRestrictedWithoutNonceRetry();
+    HttpResponse<String> response = client.getRestrictedWithoutNonceAndRetry();
 
     assertEquals(401, response.statusCode());
 
@@ -77,12 +79,35 @@ class DPoPAuthControllerIT {
   }
 
   @Test
-  void dpopLoginInvalidCredentials() {
+  void loginInvalidCredentials() {
     DPoPAuthClient client = new DPoPAuthClient();
 
     HttpResponse<String> response =
-        client.loginRaw(AuthDataFactory.createNonExistentUser());
+        client.loginWithRawResponse(AuthDataFactory.createNonExistentUser());
 
     assertEquals(400, response.statusCode());
+  }
+
+  @Test
+  void meAuthenticated() {
+    DPoPAuthClient client = new DPoPAuthClient();
+    client.login(AuthDataFactory.createProvider1());
+
+    MeResponse me = client.me();
+
+    assertEquals("ProviderFirstName", me.getFirstName());
+    assertEquals("ProviderLastName", me.getLastName());
+    assertTrue(me.getRoles().contains("provider"));
+  }
+
+  @Test
+  void meUnauthenticated() {
+    DPoPAuthClient unauthenticatedClient = new DPoPAuthClient();
+
+    MeResponse me = unauthenticatedClient.me();
+
+    assertNull(me.getFirstName());
+    assertNull(me.getLastName());
+    assertNull(me.getRoles());
   }
 }

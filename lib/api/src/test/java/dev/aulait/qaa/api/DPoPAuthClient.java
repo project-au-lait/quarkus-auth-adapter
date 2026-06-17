@@ -2,23 +2,19 @@ package dev.aulait.qaa.api;
 
 import static dev.aulait.qaa.api.AuthController.*;
 
+import dev.aulait.mousse.util.JsonUtils;
+import dev.aulait.mousse.util.RestClient;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
-import java.net.URI;
 import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.function.Function;
 import lombok.Getter;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 
 public class DPoPAuthClient {
-
-  private static final Pattern ACCESS_TOKEN_PATTERN =
-      Pattern.compile("\"accessToken\"\\s*:\\s*\"([^\"]+)\"");
 
   @Getter private String accessToken;
   @Getter private final DPoPProofBuilder proofBuilder = new DPoPProofBuilder();
@@ -28,14 +24,26 @@ public class DPoPAuthClient {
           .cookieHandler(cookieManager)
           .connectTimeout(Duration.ofMillis(5000L))
           .build();
-  private final String baseUrl;
+
+  private String dpopProof;
+  private boolean useDpopAuthorization;
+
+  @Getter
+  private final RestClient client =
+      RestClient.builder()
+          .httpClient(httpClient)
+          .quarkus()
+          .allowNonSuccessStatus(true)
+          .headerSupplier("DPoP", () -> dpopProof)
+          .headerSupplier(
+              "Authorization",
+              () -> useDpopAuthorization && accessToken != null ? "DPoP " + accessToken : null)
+          .build();
+
   private final String tokenEndpoint;
 
   public DPoPAuthClient() {
     Config config = ConfigProvider.getConfig();
-    int port = config.getOptionalValue("quarkus.http.test-port", Integer.class).orElse(8080);
-    String restPath = config.getOptionalValue("quarkus.rest.path", String.class).orElse("");
-    this.baseUrl = "http://localhost:" + port + restPath;
     this.tokenEndpoint =
         config
             .getOptionalValue("auth.token-endpoint", String.class)
@@ -43,148 +51,272 @@ public class DPoPAuthClient {
   }
 
   public LoginResponse login(LoginRequest request) {
-    String url = baseUrl + "/" + BASE_PATH + LOGIN_PATH;
-    String dpopProof = proofBuilder.buildProof("POST", tokenEndpoint);
-
-    HttpResponse<String> response = doPost(url, request, dpopProof);
-
-    if (response.statusCode() == 200) {
-      accessToken = extractAccessToken(response.body());
-      return LoginResponse.builder().accessToken(accessToken).build();
-    }
-    throw new RuntimeException(
-        "DPoP login failed: " + response.statusCode() + " " + response.body());
+    String proof = proofBuilder.buildProof("POST", tokenEndpoint);
+    LoginResponse loginResponse =
+        post(BASE_PATH + LOGIN_PATH, tokenEndpoint, request, LoginResponse.class, proof, false);
+    accessToken = loginResponse.getAccessToken();
+    return loginResponse;
   }
 
-  public HttpResponse<String> loginRaw(LoginRequest request) {
-    String url = baseUrl + "/" + BASE_PATH + LOGIN_PATH;
-    String dpopProof = proofBuilder.buildProof("POST", tokenEndpoint);
-    return doPost(url, request, dpopProof);
-  }
-
-  public HttpResponse<String> loginRawWithNonce(LoginRequest request, String nonce) {
-    String url = baseUrl + "/" + BASE_PATH + LOGIN_PATH;
-    String dpopProof = proofBuilder.buildProof("POST", tokenEndpoint, null, nonce);
-    return doPost(url, request, dpopProof);
-  }
-
-  public LoginResponse refreshToken() {
-    String url = baseUrl + "/" + BASE_PATH + REFRESH_TOKEN_PATH;
-    String dpopProof = proofBuilder.buildProof("POST", tokenEndpoint);
-
-    HttpResponse<String> response = doGet(url, dpopProof);
-
-    if (response.statusCode() == 200) {
-      accessToken = extractAccessToken(response.body());
-      return LoginResponse.builder().accessToken(accessToken).build();
-    }
-    throw new RuntimeException(
-        "DPoP refresh failed: " + response.statusCode() + " " + response.body());
-  }
-
-  public HttpResponse<String> refreshTokenRaw() {
-    String url = baseUrl + "/" + BASE_PATH + REFRESH_TOKEN_PATH;
-    String dpopProof = proofBuilder.buildProof("POST", tokenEndpoint);
-    return doGet(url, dpopProof);
-  }
-
-  public HttpResponse<String> getRestricted() {
-    String url = baseUrl + "/restricted";
-    String dpopProof = proofBuilder.buildProof("GET", url, accessToken);
-    HttpResponse<String> response = doGetWithAuth(url, dpopProof);
-
-    // Auto-retry with nonce if RS requires it
-    if (response.statusCode() == 401) {
-      String nonce = response.headers().firstValue("DPoP-Nonce").orElse(null);
-      if (nonce != null) {
-        String retryProof = proofBuilder.buildProof("GET", url, accessToken, nonce);
-        return doGetWithAuth(url, retryProof);
-      }
-    }
+  public HttpResponse<String> loginWithRawResponse(LoginRequest request) {
+    String proof = proofBuilder.buildProof("POST", tokenEndpoint);
+    @SuppressWarnings("unchecked")
+    HttpResponse<String> response =
+        (HttpResponse<String>)
+            post(BASE_PATH + LOGIN_PATH, tokenEndpoint, request, HttpResponse.class, proof, false);
     return response;
   }
 
-  public HttpResponse<String> getRestrictedWithoutNonceRetry() {
-    String url = baseUrl + "/restricted";
-    String dpopProof = proofBuilder.buildProof("GET", url, accessToken);
-    return doGetWithAuth(url, dpopProof);
+  public LoginResponse tokenRefresh() {
+    String proof = proofBuilder.buildProof("POST", tokenEndpoint);
+    LoginResponse loginResponse =
+        get(BASE_PATH + REFRESH_TOKEN_PATH, tokenEndpoint, LoginResponse.class, proof, false);
+    accessToken = loginResponse.getAccessToken();
+    return loginResponse;
+  }
+
+  public MeResponse me() {
+    String path = BASE_PATH + ME_PATH;
+    String proof = proofBuilder.buildProof("GET", absoluteUrlFor(path), accessToken, null);
+    return get(path, path, MeResponse.class, proof, true);
+  }
+
+  public HttpResponse<String> getRestricted() {
+    String restrictedPath = "/restricted";
+    String proof =
+        proofBuilder.buildProof("GET", absoluteUrlFor(restrictedPath), accessToken, null);
+    return get(restrictedPath, restrictedPath, HttpResponse.class, proof, true);
+  }
+
+  public HttpResponse<String> getRestrictedWithoutNonceAndRetry() {
+    String restrictedPath = "/restricted";
+    String proofWithoutNonce =
+        proofBuilder.buildProof("GET", absoluteUrlFor(restrictedPath), accessToken, null);
+    @SuppressWarnings("unchecked")
+    HttpResponse<String> response =
+        (HttpResponse<String>)
+            getWithoutRetry(restrictedPath, HttpResponse.class, proofWithoutNonce, true);
+    return response;
   }
 
   public HttpResponse<String> getRestrictedWithNonce(String nonce) {
-    String url = baseUrl + "/restricted";
-    String dpopProof = proofBuilder.buildProof("GET", url, accessToken, nonce);
-    return doGetWithAuth(url, dpopProof);
+    String restrictedPath = "/restricted";
+    String proof =
+        proofBuilder.buildProof("GET", absoluteUrlFor(restrictedPath), accessToken, nonce);
+    @SuppressWarnings("unchecked")
+    HttpResponse<String> response =
+        (HttpResponse<String>) getWithoutRetry(restrictedPath, HttpResponse.class, proof, true);
+    return response;
   }
 
   public HttpResponse<String> getRestrictedWithoutProof() {
-    String url = baseUrl + "/restricted";
-    HttpRequest request =
-        HttpRequest.newBuilder()
-            .uri(URI.create(url))
-            .header("Authorization", "DPoP " + accessToken)
-            .GET()
-            .build();
-    return send(request);
+    @SuppressWarnings("unchecked")
+    HttpResponse<String> response =
+        (HttpResponse<String>) getWithoutRetry("/restricted", HttpResponse.class, null, true);
+    return response;
   }
 
-  private HttpResponse<String> doPost(String url, LoginRequest loginRequest, String dpopProof) {
-    String body = toJson(loginRequest);
-    HttpRequest request =
-        HttpRequest.newBuilder()
-            .uri(URI.create(url))
-            .header("Content-Type", "application/json")
-            .header("DPoP", dpopProof)
-            .POST(HttpRequest.BodyPublishers.ofString(body))
-            .build();
-    return send(request);
+  public <T> T get(
+      String path, String htu, Class<T> responseType, String dpopProof, boolean useDpopAuthorization) {
+    return executeWithDpopNonceRetry(
+        "GET",
+        htu,
+        responseType,
+        dpopProof,
+        useDpopAuthorization,
+        proof -> {
+          @SuppressWarnings("unchecked")
+          HttpResponse<String> response =
+              (HttpResponse<String>)
+                  getWithoutRetry(path, HttpResponse.class, proof, useDpopAuthorization);
+          return response;
+        });
   }
 
-  private HttpResponse<String> doGet(String url, String dpopProof) {
-    HttpRequest request =
-        HttpRequest.newBuilder()
-            .uri(URI.create(url))
-            .header("DPoP", dpopProof)
-            .GET()
-            .build();
-    return send(request);
+  public <T> T post(
+      String path,
+      String htu,
+      Object request,
+      Class<T> responseType,
+      String dpopProof,
+      boolean useDpopAuthorization) {
+    return executeWithDpopNonceRetry(
+        "POST",
+        htu,
+        responseType,
+        dpopProof,
+        useDpopAuthorization,
+        proof -> {
+          @SuppressWarnings("unchecked")
+          HttpResponse<String> response =
+              (HttpResponse<String>)
+                  postWithoutRetry(
+                      path, request, HttpResponse.class, proof, useDpopAuthorization);
+          return response;
+        });
   }
 
-  private HttpResponse<String> doGetWithAuth(String url, String dpopProof) {
-    HttpRequest request =
-        HttpRequest.newBuilder()
-            .uri(URI.create(url))
-            .header("Authorization", "DPoP " + accessToken)
-            .header("DPoP", dpopProof)
-            .GET()
-            .build();
-    return send(request);
+  public <T> T put(
+      String path,
+      String htu,
+      Object request,
+      Class<T> responseType,
+      String dpopProof,
+      boolean useDpopAuthorization) {
+    return executeWithDpopNonceRetry(
+        "PUT",
+        htu,
+        responseType,
+        dpopProof,
+        useDpopAuthorization,
+        proof -> {
+          @SuppressWarnings("unchecked")
+          HttpResponse<String> response =
+              (HttpResponse<String>)
+                  putWithoutRetry(
+                      path, request, HttpResponse.class, proof, useDpopAuthorization);
+          return response;
+        });
   }
 
-  private HttpResponse<String> send(HttpRequest request) {
+  public <T> T delete(
+      String path,
+      String htu,
+      Object request,
+      Class<T> responseType,
+      String dpopProof,
+      boolean useDpopAuthorization) {
+    return executeWithDpopNonceRetry(
+        "DELETE",
+        htu,
+        responseType,
+        dpopProof,
+        useDpopAuthorization,
+        proof -> {
+          @SuppressWarnings("unchecked")
+          HttpResponse<String> response =
+              (HttpResponse<String>)
+                  deleteWithoutRetry(
+                      path, request, HttpResponse.class, proof, useDpopAuthorization);
+          return response;
+        });
+  }
+
+  private <T> T executeWithDpopNonceRetry(
+      String method,
+      String htu,
+      Class<T> responseType,
+      String dpopProof,
+      boolean useDpopAuthorization,
+      Function<String, HttpResponse<String>> executor) {
+    HttpResponse<String> rawResponse = executor.apply(dpopProof);
+
+    if (requiresDpopNonceRetry(rawResponse)) {
+      String nonce = rawResponse.headers().firstValue("DPoP-Nonce").orElse(null);
+      if (nonce != null) {
+        String retryProof =
+            proofBuilder.buildProof(
+                  method, absoluteUrlFor(htu), useDpopAuthorization ? accessToken : null, nonce);
+        rawResponse = executor.apply(retryProof);
+      }
+    }
+
+    return toResponseType(rawResponse, responseType);
+  }
+
+  private <T> T getWithoutRetry(
+      String path, Class<T> responseType, String dpopProof, boolean useDpopAuthorization) {
+    this.dpopProof = dpopProof;
+    this.useDpopAuthorization = useDpopAuthorization;
     try {
-      return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      throw new RuntimeException("Request interrupted", e);
-    } catch (Exception e) {
-      throw new RuntimeException("Request failed", e);
+      return client.get(path, responseType);
+    } finally {
+      clearRequestScopedHeaders();
     }
   }
 
-  private String toJson(LoginRequest request) {
-    return "{\"userName\":\"" + escapeJson(request.getUserName())
-        + "\",\"password\":\"" + escapeJson(request.getPassword()) + "\"}";
-  }
-
-  private String extractAccessToken(String json) {
-    Matcher m = ACCESS_TOKEN_PATTERN.matcher(json);
-    if (m.find()) {
-      return m.group(1);
+  private <T> T postWithoutRetry(
+      String path,
+      Object request,
+      Class<T> responseType,
+      String dpopProof,
+      boolean useDpopAuthorization) {
+    this.dpopProof = dpopProof;
+    this.useDpopAuthorization = useDpopAuthorization;
+    try {
+      return client.post(path, request, responseType);
+    } finally {
+      clearRequestScopedHeaders();
     }
-    throw new RuntimeException("accessToken not found in response: " + json);
   }
 
-  private static String escapeJson(String value) {
-    return value.replace("\\", "\\\\").replace("\"", "\\\"");
+  private <T> T putWithoutRetry(
+      String path,
+      Object request,
+      Class<T> responseType,
+      String dpopProof,
+      boolean useDpopAuthorization) {
+    this.dpopProof = dpopProof;
+    this.useDpopAuthorization = useDpopAuthorization;
+    try {
+      return client.put(path, request, responseType);
+    } finally {
+      clearRequestScopedHeaders();
+    }
+  }
+
+  private <T> T deleteWithoutRetry(
+      String path,
+      Object request,
+      Class<T> responseType,
+      String dpopProof,
+      boolean useDpopAuthorization) {
+    this.dpopProof = dpopProof;
+    this.useDpopAuthorization = useDpopAuthorization;
+    try {
+      return client.delete(path, request, responseType);
+    } finally {
+      clearRequestScopedHeaders();
+    }
+  }
+
+  private boolean requiresDpopNonceRetry(HttpResponse<?> response) {
+    if (response.statusCode() == 400) {
+      return true;
+    }
+    if (response.statusCode() != 401) {
+      return false;
+    }
+
+    String wwwAuthenticate = response.headers().firstValue("WWW-Authenticate").orElse("");
+    return wwwAuthenticate.contains("use_dpop_nonce");
+  }
+
+  @SuppressWarnings("unchecked")
+  private <T> T toResponseType(HttpResponse<String> response, Class<T> responseType) {
+    if (responseType == HttpResponse.class) {
+      return (T) response;
+    }
+    if (responseType == String.class) {
+      return (T) response.body();
+    }
+    return JsonUtils.str2obj(response.body(), responseType);
+  }
+
+  private String absoluteUrlFor(String path) {
+    if (path.startsWith("http://") || path.startsWith("https://")) {
+        return path;
+    }
+    String normalizedPath = path.startsWith("/") ? path : "/" + path;
+    String base = client.getBaseUrl();
+    if (base.endsWith("/")) {
+        base = base.substring(0, base.length() - 1);
+    }
+    return base + normalizedPath;
+  }
+
+  private void clearRequestScopedHeaders() {
+    dpopProof = null;
+    useDpopAuthorization = false;
   }
 }
