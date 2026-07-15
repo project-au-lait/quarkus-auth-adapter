@@ -94,20 +94,6 @@
               </execution>
               <execution>
                 <?m2e ignore?>
-                <id>pnpm-preview</id>
-                <phase>pre-integration-test</phase>
-                <goals>
-                  <goal>exec</goal>
-                </goals>
-                <configuration>
-                  <async>true</async>
-                  <executable>pnpm</executable>
-                  <commandlineArgs>-C ${project.basedir}/../svelte-refimpl preview --port
-                    ${frontend.port}</commandlineArgs>
-                </configuration>
-              </execution>
-              <execution>
-                <?m2e ignore?>
                 <id>pnpm-playwright-test</id>
                 <phase>integration-test</phase>
                 <goals>
