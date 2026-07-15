@@ -25,50 +25,21 @@ export default defineConfig({
   reporter: 'html',
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
+    /* Base URL to use in actions like `await page.goto('/')`. */
+    // baseURL: 'http://127.0.0.1:3000',
+    baseURL: 'http://localhost:5173',
+
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
     actionTimeout: 3000,
     navigationTimeout: 3000
   },
 
-  webServer: [
-    {
-      command: 'pnpm -C ../svelte-refimpl preview --port 5173',
-      url: 'http://localhost:5173',
-      reuseExistingServer: true,
-      timeout: 30000
-    },
-    {
-      command: 'pnpm -C ../svelte-refimpl preview --port 5174',
-      url: 'http://localhost:5174',
-      reuseExistingServer: true,
-      timeout: 30000,
-      env: {
-        PUBLIC_AUTH_MODE: 'dpop',
-        PUBLIC_BACKEND_URL: 'http://localhost:8080',
-        PUBLIC_TOKEN_ENDPOINT:
-          'http://localhost:8085/realms/qaa-realm/protocol/openid-connect/token'
-      }
-    }
-  ],
-
   /* Configure projects for major browsers */
   projects: [
     {
       name: 'chromium',
-      use: {
-        ...devices['Desktop Chrome'],
-        baseURL: 'http://localhost:5173'
-      },
-      testIgnore: /dpop\.spec/
-    },
-    {
-      name: 'chromium-dpop',
-      use: {
-        ...devices['Desktop Chrome'],
-        baseURL: 'http://localhost:5174'
-      },
-      testMatch: /dpop\.spec/
+      use: { ...devices['Desktop Chrome'] }
     }
 
     /* Scope out temporarily */
@@ -102,4 +73,11 @@ export default defineConfig({
     //   use: { ...devices['Desktop Chrome'], channel: 'chrome' },
     // },
   ]
+
+  /* Run your local dev server before starting the tests */
+  // webServer: {
+  //   command: 'npm run start',
+  //   url: 'http://127.0.0.1:3000',
+  //   reuseExistingServer: !process.env.CI,
+  // },
 });
