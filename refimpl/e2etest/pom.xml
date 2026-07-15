@@ -94,64 +94,6 @@
               </execution>
               <execution>
                 <?m2e ignore?>
-                <id>kill-stale-servers</id>
-                <phase>pre-integration-test</phase>
-                <goals>
-                  <goal>exec</goal>
-                </goals>
-                <configuration>
-                  <executable>node</executable>
-                  <commandlineArgs>scripts/kill-stale-servers.mjs ${frontend.port}</commandlineArgs>
-                </configuration>
-              </execution>
-              <execution>
-                <?m2e ignore?>
-                <id>pnpm-preview</id>
-                <phase>pre-integration-test</phase>
-                <goals>
-                  <goal>exec</goal>
-                </goals>
-                <configuration>
-                  <async>true</async>
-                  <executable>pnpm</executable>
-                  <commandlineArgs>-C ${project.basedir}/../svelte-refimpl preview --port
-                    ${frontend.port}</commandlineArgs>
-                </configuration>
-              </execution>
-              <execution>
-                <?m2e ignore?>
-                <id>pnpm-preview-dpop</id>
-                <phase>pre-integration-test</phase>
-                <goals>
-                  <goal>exec</goal>
-                </goals>
-                <configuration>
-                  <async>true</async>
-                  <executable>pnpm</executable>
-                  <commandlineArgs>-C ${project.basedir}/../svelte-refimpl preview --port
-                    5174</commandlineArgs>
-                  <environmentVariables>
-                    <PUBLIC_AUTH_MODE>dpop</PUBLIC_AUTH_MODE>
-                    <PUBLIC_BACKEND_URL>http://localhost:8080</PUBLIC_BACKEND_URL>
-                    <PUBLIC_TOKEN_ENDPOINT>
-                      http://localhost:8085/realms/qaa-realm/protocol/openid-connect/token</PUBLIC_TOKEN_ENDPOINT>
-                  </environmentVariables>
-                </configuration>
-              </execution>
-              <execution>
-                <?m2e ignore?>
-                <id>wait-for-servers</id>
-                <phase>pre-integration-test</phase>
-                <goals>
-                  <goal>exec</goal>
-                </goals>
-                <configuration>
-                  <executable>node</executable>
-                  <commandlineArgs>scripts/wait-for-servers.mjs ${frontend.port} 5174 8080</commandlineArgs>
-                </configuration>
-              </execution>
-              <execution>
-                <?m2e ignore?>
                 <id>pnpm-playwright-test</id>
                 <phase>integration-test</phase>
                 <goals>
