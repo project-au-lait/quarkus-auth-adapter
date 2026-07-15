@@ -102,17 +102,14 @@ DPoP を有効にする場合は、application.properties に以下のプロパ�
 quarkus.http.cors.headers=content-type,authorization,DPoP
 quarkus.http.cors.exposed-headers=DPoP-Nonce,WWW-Authenticate
 
-# DPoP OIDC テナント
-quarkus.oidc.dpop.auth-server-url=http://localhost:<keycloakポート>/realms/<realm>
-quarkus.oidc.dpop.client-id=<client-id>
-quarkus.oidc.dpop.credentials.secret=<client-secret>
-quarkus.oidc.dpop.token.authorization-scheme=dpop
+# DPoP 認証スキーム
+quarkus.oidc.token.authorization-scheme=dpop
 
 # DPoP nonce の有効期限
 qaa.dpop.nonce-ttl-seconds=DPoP nonceの有効期限(秒)
 ```
 
-また、DPoP リクエストを `dpop` テナントにルーティングするための `io.quarkus.oidc.TenantResolver` の実装と、サーバー nonce を管理する `DPoPNonceProvider` の実装が必要です。
+また、サーバー nonce を管理する `DPoPNonceProvider` の実装が必要です。
 
 以上の設定後、Quarkus、Keycloak を起動し[Swagger UI](http://localhost:8080/q/swagger-ui/) を開くと以下の API が使用可能な状態となります。
 

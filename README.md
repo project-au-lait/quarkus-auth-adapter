@@ -101,17 +101,14 @@ To enable DPoP support, add the following properties to `application.properties`
 quarkus.http.cors.headers=content-type,authorization,DPoP
 quarkus.http.cors.exposed-headers=DPoP-Nonce,WWW-Authenticate
 
-# DPoP OIDC tenant
-quarkus.oidc.dpop.auth-server-url=http://localhost:<keycloak-port>/realms/<realm>
-quarkus.oidc.dpop.client-id=<client-id>
-quarkus.oidc.dpop.credentials.secret=<client-secret>
-quarkus.oidc.dpop.token.authorization-scheme=dpop
+# DPoP authorization scheme
+quarkus.oidc.token.authorization-scheme=dpop
 
 # DPoP nonce TTL
 qaa.dpop.nonce-ttl-seconds=DPoP nonce expiration time (seconds)
 ```
 
-You also need to implement `io.quarkus.oidc.TenantResolver` to route DPoP requests to the `dpop` tenant, and a `DPoPNonceProvider` for server nonce management.
+You also need to implement `DPoPNonceProvider` for server nonce management.
 
 After these settings, start Quarkus and Keycloak, and open [Swagger UI](http://localhost:8080/q/swagger-ui/). The following APIs will be available.
 
