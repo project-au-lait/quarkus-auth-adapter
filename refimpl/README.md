@@ -4,7 +4,7 @@ This directory contains the reference implementation of QAA.
 Each subdirectory contains the following resources:
 
 - container
-  Containers for Keycloak and the SMTP server ([Mailpit](https://mailpit.axllent.org/)), with nginx reverse proxy for DPoP support
+  Containers for Keycloak and the SMTP server ([Mailpit](https://mailpit.axllent.org/))
 - keycloak-refimpl
   Backend using Keycloak as the IAM Provider
 - svelte-refimpl
