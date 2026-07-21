@@ -8,12 +8,21 @@ import dev.aulait.qaa.api.MeResponse;
 import dev.aulait.qaa.api.ResetPasswordRequest;
 import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.ws.rs.CookieParam;
+import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.eclipse.microprofile.openapi.annotations.tags.Tags;
@@ -23,10 +32,12 @@ import org.keycloak.authorization.client.Configuration;
 import org.keycloak.authorization.client.util.Http;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.util.JsonSerialization;
 
 @Path(AuthController.BASE_PATH)
 @Tags(@Tag(name = "Auth Controller"))
 @RequiredArgsConstructor
+@Slf4j
 public class KeycloakAuthController implements AuthController {
 
   private final AuthzClient authzClient;
@@ -34,11 +45,26 @@ public class KeycloakAuthController implements AuthController {
   private final AuthHttpClient authHttpClient;
   private final SecurityIdentity identity;
 
+  private static final String DPOP_REQUEST_FAILED_MSG = "DPoP token request failed";
+  private static final String DPOP_NONCE_HEADER_NAME = "DPoP-Nonce";
+
   @ConfigProperty(name = "auth.refreshToken.cookie.timeout")
   private int refreshTokenCookieTimeout;
 
+  @ConfigProperty(name = "auth.token-endpoint")
+  private Optional<String> tokenEndpointConfig;
+
   @Override
-  public Response login(LoginRequest request) {
+  public Response login(LoginRequest request, @HeaderParam("DPoP") String dpopProof) {
+    if (dpopProof != null && !dpopProof.isEmpty()) {
+      String formBody =
+          clientCredentials()
+              + "&grant_type=password"
+              + "&username=" + encode(request.getUserName())
+              + "&password=" + encode(request.getPassword());
+      return postWithDPoP(formBody, dpopProof);
+    }
+
     AccessTokenResponse atr =
         authzClient.obtainAccessToken(request.getUserName(), request.getPassword());
 
@@ -82,12 +108,22 @@ public class KeycloakAuthController implements AuthController {
   }
 
   @Override
-  public Response refreshToken(@CookieParam(REFRESH_TOKEN_COOKIE_NAME) String refreshToken) {
+  public Response refreshToken(
+      @CookieParam(REFRESH_TOKEN_COOKIE_NAME) String refreshToken,
+      @HeaderParam("DPoP") String dpopProof) {
 
     if (refreshToken == null || refreshToken.isEmpty()) {
       return Response.status(Response.Status.BAD_REQUEST)
           .entity("Refresh token is required")
           .build();
+    }
+
+    if (dpopProof != null && !dpopProof.isEmpty()) {
+      String formBody =
+          clientCredentials()
+              + "&grant_type=refresh_token"
+              + "&refresh_token=" + encode(refreshToken);
+      return postWithDPoP(formBody, dpopProof);
     }
 
     Configuration config = authzClient.getConfiguration();
@@ -106,6 +142,62 @@ public class KeycloakAuthController implements AuthController {
             .execute();
 
     return build(atr);
+  }
+
+  private Response postWithDPoP(String formBody, String dpopProof) {
+    try {
+      String tokenEndpoint = resolveTokenEndpoint();
+      HttpRequest request =
+          HttpRequest.newBuilder()
+              .uri(URI.create(tokenEndpoint))
+              .header("Content-Type", "application/x-www-form-urlencoded")
+              .header("DPoP", dpopProof)
+              .POST(HttpRequest.BodyPublishers.ofString(formBody))
+              .build();
+
+      HttpResponse<String> response =
+          HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
+
+      if (response.statusCode() == 200) {
+        AccessTokenResponse atr =
+            JsonSerialization.readValue(response.body(), AccessTokenResponse.class);
+        return build(atr);
+      }
+
+      String dpopNonce = response.headers().firstValue(DPOP_NONCE_HEADER_NAME).orElse(null);
+      Response.ResponseBuilder rb =
+          Response.status(response.statusCode())
+              .type(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
+              .entity(response.body());
+      if (dpopNonce != null) {
+        rb.header(DPOP_NONCE_HEADER_NAME, dpopNonce);
+      }
+      return rb.build();
+
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      log.error("DPoP token request interrupted", e);
+      return Response.serverError().entity(DPOP_REQUEST_FAILED_MSG).build();
+    } catch (Exception e) {
+      log.error(DPOP_REQUEST_FAILED_MSG, e);
+      return Response.serverError().entity(DPOP_REQUEST_FAILED_MSG).build();
+    }
+  }
+
+  private String clientCredentials() {
+    Configuration config = authzClient.getConfiguration();
+    return "client_id=" + encode(config.getResource())
+        + "&client_secret=" + encode((String) config.getCredentials().get("secret"));
+  }
+
+  private String resolveTokenEndpoint() {
+    return tokenEndpointConfig
+        .filter(s -> !s.isEmpty())
+        .orElseGet(() -> authzClient.getServerConfiguration().getTokenEndpoint());
+  }
+
+  private static String encode(String value) {
+    return URLEncoder.encode(value, StandardCharsets.UTF_8);
   }
 
   @Override

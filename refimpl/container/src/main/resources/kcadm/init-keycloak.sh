@@ -17,7 +17,8 @@ function create_realms() {
     kcadm.sh create clients -r $REALM -s clientId=$CLIENT_ID -s enabled=true \
     -s rootUrl=http://127.0.0.1:$FRONTEND_PORT \
     -s 'redirectUris=["*"]' -s 'webOrigins=["*"]' -s directAccessGrantsEnabled=true \
-    -s secret=$CLIENT_SECRET -s publicClient=false -s authorizationServicesEnabled=true -s serviceAccountsEnabled=true
+    -s secret=$CLIENT_SECRET -s publicClient=false -s authorizationServicesEnabled=true -s serviceAccountsEnabled=true \
+    -s 'attributes={"dpop.bound.access.tokens":"required"}'
   done
 }
 
