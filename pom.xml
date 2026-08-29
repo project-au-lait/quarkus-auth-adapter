@@ -34,26 +34,7 @@
     <ant.file>build.xml</ant.file>
     <ant.target>deploy</ant.target>
 
-    <auth.user>admin</auth.user>
-    <auth.password>admin</auth.password>
-    <auth.port>8085</auth.port>
-    <auth.port.ssl>8545</auth.port.ssl>
-    <auth.realm>qaa-realm</auth.realm>
-    <auth.role.provider>provider</auth.role.provider>
-    <auth.role.user>user</auth.role.user>
-    <auth.clientId>qaa-client</auth.clientId>
-    <auth.clientSecret>qaa-secret</auth.clientSecret>
-    <auth.theme>qaa-theme</auth.theme>
-    <auth.accessToken.timeout>5</auth.accessToken.timeout>
-    <auth.refreshToken.cookie.timeout>10</auth.refreshToken.cookie.timeout>
-
-    <backend.port>8080</backend.port>
-
     <deployAtEnd>true</deployAtEnd>
-
-    <exec-plugin.version>3.2.0</exec-plugin.version>
-
-    <frontend.port>5173</frontend.port>
 
     <installAtEnd>true</installAtEnd>
 
@@ -66,8 +47,6 @@
     <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
     <quarkus.platform.version>3.33.1</quarkus.platform.version>
 
-    <smtp.web.port>8025</smtp.web.port>
-
     <maven.deploy.skip>false</maven.deploy.skip>
 
     <surefire-plugin.version>3.5.3</surefire-plugin.version>
@@ -76,10 +55,7 @@
   <modules>
     <module>lib/api</module>
     <module>lib/keycloak</module>
-    <module>refimpl/container</module>
-    <module>refimpl/e2etest</module>
-    <module>refimpl/keycloak-refimpl</module>
-    <module>refimpl/svelte-refimpl</module>
+    <module>refimpl</module>
   </modules>
 
   <build>
@@ -158,20 +134,6 @@
 
   <!-- Environment Settings -->
   <profiles>
-    <profile>
-      <id>e2etest</id>
-      <activation>
-        <property>
-          <name>env.E2E_TEST</name>
-          <value>true</value>
-        </property>
-      </activation>
-      <properties>
-        <auth.accessToken.timeout>1</auth.accessToken.timeout>
-        <auth.refreshToken.cookie.timeout>2</auth.refreshToken.cookie.timeout>
-      </properties>
-    </profile>
-
     <profile>
       <id>release</id>
 

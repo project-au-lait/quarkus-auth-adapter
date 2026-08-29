@@ -8,9 +8,9 @@
 
   <parent>
     <groupId>dev.aulait.qaa</groupId>
-    <artifactId>quarkus-auth-adapter</artifactId>
+    <artifactId>quarkus-auth-adapter-refimpl</artifactId>
     <version>0.8-SNAPSHOT</version>
-    <relativePath>../../</relativePath>
+    <relativePath>../</relativePath>
   </parent>
 
   <properties>
@@ -37,12 +37,12 @@
       <dependencies>
         <dependency>
           <groupId>${project.groupId}</groupId>
-          <artifactId>${project.parent.artifactId}-keycloak-refimpl</artifactId>
+          <artifactId>quarkus-auth-adapter-keycloak-refimpl</artifactId>
           <version>${project.version}</version>
         </dependency>
         <dependency>
           <groupId>${project.groupId}</groupId>
-          <artifactId>${project.parent.artifactId}-svelte-refimpl</artifactId>
+          <artifactId>quarkus-auth-adapter-svelte-refimpl</artifactId>
           <version>${project.version}</version>
         </dependency>
       </dependencies>

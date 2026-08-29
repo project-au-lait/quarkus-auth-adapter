@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>dev.aulait.qaa</groupId>
+    <artifactId>quarkus-auth-adapter</artifactId>
+    <version>0.8-SNAPSHOT</version>
+    <relativePath>../</relativePath>
+  </parent>
+
+  <artifactId>quarkus-auth-adapter-refimpl</artifactId>
+  <packaging>pom</packaging>
+
+  <properties>
+    <auth.user>admin</auth.user>
+    <auth.password>admin</auth.password>
+    <auth.port>8085</auth.port>
+    <auth.port.ssl>8545</auth.port.ssl>
+    <auth.realm>qaa-realm</auth.realm>
+    <auth.role.provider>provider</auth.role.provider>
+    <auth.role.user>user</auth.role.user>
+    <auth.clientId>qaa-client</auth.clientId>
+    <auth.clientSecret>qaa-secret</auth.clientSecret>
+    <auth.theme>qaa-theme</auth.theme>
+    <auth.accessToken.timeout>5</auth.accessToken.timeout>
+    <auth.refreshToken.cookie.timeout>10</auth.refreshToken.cookie.timeout>
+
+    <backend.port>8080</backend.port>
+
+    <exec-plugin.version>3.2.0</exec-plugin.version>
+
+    <frontend.port>5173</frontend.port>
+
+    <maven.deploy.skip>true</maven.deploy.skip>
+
+    <smtp.web.port>8025</smtp.web.port>
+  </properties>
+
+  <modules>
+    <module>container</module>
+    <module>e2etest</module>
+    <module>keycloak-refimpl</module>
+    <module>svelte-refimpl</module>
+  </modules>
+
+  <profiles>
+    <profile>
+      <id>e2etest</id>
+      <activation>
+        <property>
+          <name>env.E2E_TEST</name>
+          <value>true</value>
+        </property>
+      </activation>
+      <properties>
+        <auth.accessToken.timeout>1</auth.accessToken.timeout>
+        <auth.refreshToken.cookie.timeout>2</auth.refreshToken.cookie.timeout>
+      </properties>
+    </profile>
+  </profiles>
+
+</project>
