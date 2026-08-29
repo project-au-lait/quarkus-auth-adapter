@@ -1,6 +1,7 @@
 
 refimpl/container/.env
 
+refimpl/env.properties
 
 node_modules
 target

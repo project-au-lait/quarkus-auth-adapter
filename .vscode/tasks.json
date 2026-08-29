@@ -13,7 +13,7 @@
       "linux": {
         "command": "./mvnw"
       },
-      "args": ["-f", "refimpl/container", "compile"],
+      "args": ["-pl", "refimpl/container", "-am", "compile"],
       "problemMatcher": [],
       "runOptions": {
         "runOn": "folderOpen"
@@ -31,7 +31,7 @@
       "linux": {
         "command": "./mvnw"
       },
-      "args": ["-f", "refimpl/keycloak-refimpl", "quarkus:dev"],
+      "args": ["-pl", "refimpl/keycloak-refimpl", "-am", "quarkus:dev"],
       "problemMatcher": []
     }
   ]

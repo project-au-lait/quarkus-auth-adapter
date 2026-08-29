@@ -1,3 +1,5 @@
+name: qaa-container
+
 services:
   keycloak:
     command: start-dev
