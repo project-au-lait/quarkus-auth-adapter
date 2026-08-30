@@ -1,60 +1,60 @@
 <script lang="ts">
-	import '@picocss/pico';
-	import { onMount } from 'svelte';
-	import MessagePanel from '$lib/arch/global/MessagePanel.svelte';
-	import accessTokenStore from '$lib/arch/auth/AccessTokenStore';
-	import ApiHandler from '$lib/arch/api/ApiHandler';
+  import '@picocss/pico';
+  import { onMount } from 'svelte';
+  import MessagePanel from '$lib/arch/global/MessagePanel.svelte';
+  import accessTokenStore from '$lib/arch/auth/AccessTokenStore';
+  import ApiHandler from '$lib/arch/api/ApiHandler';
 
-	onMount(async () => {
-		await ApiHandler.refreshAccessToken(fetch);
-	});
+  onMount(async () => {
+    await ApiHandler.refreshAccessToken(fetch);
+  });
 </script>
 
 <nav class="container">
-	<ul>
-		<li><strong>Auth</strong></li>
-	</ul>
-	<ul>
-		<li><a href="/">Top</a></li>
-		{#if $accessTokenStore}
-			<li>
-				<button on:click={() => accessTokenStore.set(null)}>Logout</button>
-			</li>
-			<li id="login-status">Logged in</li>
-		{:else}
-			<li>
-				<a id="loginLink" href="/private">Login</a>
-			</li>
-			<li id="login-status">Not logged in</li>
-		{/if}
-	</ul>
+  <ul>
+    <li><strong>Auth</strong></li>
+  </ul>
+  <ul>
+    <li><a href="/">Top</a></li>
+    {#if $accessTokenStore}
+      <li>
+        <button on:click={() => accessTokenStore.set(null)}>Logout</button>
+      </li>
+      <li id="login-status">Logged in</li>
+    {:else}
+      <li>
+        <a id="loginLink" href="/private">Login</a>
+      </li>
+      <li id="login-status">Not logged in</li>
+    {/if}
+  </ul>
 </nav>
 
 <main class="container">
-	<MessagePanel />
+  <MessagePanel />
 
-	<slot />
+  <slot />
 </main>
 
 <footer class="container">
-	{#if $accessTokenStore}
-		<p class="token">
-			AccessToken: <span id="access-token">{$accessTokenStore}</span>
-		</p>
-	{/if}
+  {#if $accessTokenStore}
+    <p class="token">
+      AccessToken: <span id="access-token">{$accessTokenStore}</span>
+    </p>
+  {/if}
 </footer>
 
 <style>
-	:global(:root) {
-		--pico-font-size: small;
-	}
+  :global(:root) {
+    --pico-font-size: small;
+  }
 
-	main {
-		min-height: 50vh;
-	}
+  main {
+    min-height: 50vh;
+  }
 
-	.token {
-		overflow: scroll;
-		white-space: nowrap;
-	}
+  .token {
+    overflow: scroll;
+    white-space: nowrap;
+  }
 </style>
