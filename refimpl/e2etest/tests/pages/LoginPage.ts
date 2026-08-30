@@ -19,6 +19,8 @@ export default class LoginPage extends BasePage {
     }
     await this.click('#login');
 
-    return new PrivatePage(this.page, this.dryRun);
+    const privatePage = new PrivatePage(this.page, this.dryRun);
+    await privatePage.expectLoggedIn();
+    return privatePage;
   }
 }

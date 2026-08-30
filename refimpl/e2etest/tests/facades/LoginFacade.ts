@@ -19,8 +19,7 @@ class LoginFacade {
 
     const loginPage = await topPage.gotoLoginPage();
 
-    const privatePage = await loginPage.okLogin(userName, password);
-    await privatePage.expectLoggedIn();
+    await loginPage.okLogin(userName, password);
   }
 }
 
