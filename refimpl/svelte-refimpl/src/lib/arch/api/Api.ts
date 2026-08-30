@@ -23,6 +23,12 @@ export interface LoginResponse {
   accessToken?: string;
 }
 
+export interface MeResponse {
+  firstName: string;
+  lastName: string;
+  roles: string[];
+}
+
 export interface ResetPasswordRequest {
   code: string;
   newPassword: string;
@@ -289,6 +295,21 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         method: 'POST',
         body: data,
         type: ContentType.Json,
+        format: 'json',
+        ...params
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Auth Controller
+     * @name MeList
+     * @request GET:/auth/me
+     */
+    meList: (params: RequestParams = {}) =>
+      this.request<MeResponse, any>({
+        path: `/auth/me`,
+        method: 'GET',
         format: 'json',
         ...params
       }),

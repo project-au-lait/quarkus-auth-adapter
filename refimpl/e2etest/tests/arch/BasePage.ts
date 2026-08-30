@@ -102,6 +102,15 @@ export default abstract class BasePage {
     );
   }
 
+  protected async expectInnerTextContains(selector: string, expectedText: string) {
+    await this.run(
+      Action.EXPECT_TEXT,
+      selector,
+      () => expect(this.page.locator(selector)).toContainText(expectedText),
+      expectedText
+    );
+  }
+
   protected async getInnerText(selector: string): Promise<string> {
     let value = '';
     await this.run(Action.GET_TEXT, selector, async () => {

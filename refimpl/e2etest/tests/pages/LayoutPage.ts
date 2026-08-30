@@ -7,6 +7,10 @@ export default abstract class LayoutPage extends BasePage {
   private readonly ACCSESSTOKEN_SELECTOR = '#access-token';
   private readonly REFRESHTOKEN_SELECTOR = '#refresh-token';
   private readonly LOGIN_STATUS_SELECTOR = '#login-status';
+  private readonly USER_FULL_NAME_SELECTOR = '#user-full-name';
+  private readonly USER_ROLES_SELECTOR = '#user-roles';
+  private readonly HAS_PROVIDER_ROLE_SELECTOR = '#has-provider-role';
+  private readonly HAS_ADMIN_ROLE_SELECTOR = '#has-admin-role';
 
   constructor(page: Page, dryRun: DryRun) {
     super({ page, dryRun });
@@ -33,6 +37,14 @@ export default abstract class LayoutPage extends BasePage {
     await this.expectInnerText(this.LOGIN_STATUS_SELECTOR, 'Not logged in');
     await this.expectNotVisible(this.ACCSESSTOKEN_SELECTOR);
     await this.expectNotVisible(this.REFRESHTOKEN_SELECTOR);
+    await this.expectNotVisible(this.USER_FULL_NAME_SELECTOR);
+  }
+
+  async expectUserDetails(fullName: string, role: string) {
+    await this.expectInnerText(this.USER_FULL_NAME_SELECTOR, fullName);
+    await this.expectInnerTextContains(this.USER_ROLES_SELECTOR, role);
+    await this.expectInnerText(this.HAS_PROVIDER_ROLE_SELECTOR, 'true');
+    await this.expectInnerText(this.HAS_ADMIN_ROLE_SELECTOR, 'false');
   }
 
   async expectAccessTokenNot(accessToken: string) {

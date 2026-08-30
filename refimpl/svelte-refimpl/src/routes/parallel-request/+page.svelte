@@ -1,6 +1,6 @@
 <script lang="ts">
   import apiHandler from '$lib/arch/api/ApiHandler';
-  import accessTokenStore from '$lib/arch/auth/AccessTokenStore';
+  import { loginUserStore } from '$lib/arch/auth/LoginUserStore';
 
   type CallLog = {
     run: number;
@@ -25,7 +25,7 @@
   }
 
   function invalidateAccessToken() {
-    accessTokenStore.set('invalid-token');
+    loginUserStore.setAccessToken('invalid-token');
   }
 
   async function callApi(run: number, call: number): Promise<void> {

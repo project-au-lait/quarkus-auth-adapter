@@ -1,9 +1,9 @@
 <script lang="ts">
-  import accessTokenStore from '$lib/arch/auth/AccessTokenStore';
+  import { loginUserStore } from '$lib/arch/auth/LoginUserStore';
   import LoginForm from '$lib/arch/auth/LoginForm.svelte';
 </script>
 
-{#if $accessTokenStore}
+{#if $loginUserStore.isLoggedIn}
   <slot />
 {:else}
   <LoginForm />

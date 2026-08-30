@@ -2,11 +2,11 @@
   import '@picocss/pico';
   import { onMount } from 'svelte';
   import MessagePanel from '$lib/arch/global/MessagePanel.svelte';
-  import accessTokenStore from '$lib/arch/auth/AccessTokenStore';
-  import ApiHandler from '$lib/arch/api/ApiHandler';
+  import { loginUserStore } from '$lib/arch/auth/LoginUserStore';
+  import apiHandler from '$lib/arch/api/ApiHandler';
 
   onMount(async () => {
-    await ApiHandler.refreshAccessToken(fetch);
+    await apiHandler.refreshAccessToken(fetch);
   });
 </script>
 
@@ -16,9 +16,9 @@
   </ul>
   <ul>
     <li><a href="/">Top</a></li>
-    {#if $accessTokenStore}
+    {#if $loginUserStore.isLoggedIn}
       <li>
-        <button on:click={() => accessTokenStore.set(null)}>Logout</button>
+        <button on:click={() => loginUserStore.logout()}>Logout</button>
       </li>
       <li id="login-status">Logged in</li>
     {:else}
@@ -37,9 +37,15 @@
 </main>
 
 <footer class="container">
-  {#if $accessTokenStore}
+  {#if $loginUserStore.isLoggedIn}
+    <p class="user">
+      User: <span id="user-full-name">{$loginUserStore.firstName} {$loginUserStore.lastName}</span>
+      Roles: <span id="user-roles">{$loginUserStore.roles.join(', ')}</span>
+      Has Provider Role: <span id="has-provider-role">{$loginUserStore.hasRole('provider')}</span>
+      Has Admin Role: <span id="has-admin-role">{$loginUserStore.hasRole('admin')}</span>
+    </p>
     <p class="token">
-      AccessToken: <span id="access-token">{$accessTokenStore}</span>
+      AccessToken: <span id="access-token">{$loginUserStore.accessToken}</span>
     </p>
   {/if}
 </footer>
