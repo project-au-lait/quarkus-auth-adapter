@@ -10,16 +10,14 @@
   };
 
   async function login() {
-    const res = await ApiHandler.handle<LoginResponse>(
-      fetch,
-      (api) => api.auth.loginCreate(loginRequest),
-      {
+    const res = await ApiHandler.handle<LoginResponse>(fetch, (api) =>
+      api.auth.loginCreate(loginRequest, {
         credentials: 'include'
-      }
+      })
     );
 
     if (res) {
-      accessTokenStore.set(res.accessToken);
+      accessTokenStore.set(res.accessToken ?? null);
       messageStore.show('Login succeeded.');
     } else {
       messageStore.show('Login failed.');

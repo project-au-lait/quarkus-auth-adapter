@@ -1,74 +1,73 @@
-import { env } from '$env/dynamic/public';
-import messageStore from '$lib/arch/global/MessageStore';
-import { Api, type HttpResponse, type RequestParams } from './Api';
-import accessTokenStore from '../auth/AccessTokenStore';
-import { get } from 'svelte/store';
+import { messageStore } from '$lib/arch/global/MessageStore';
+import apiClient, { type ApiClient, type RequestHandler } from './ApiClient';
 
-export default class ApiHandler {
-	static getApi(
-		fetch: (input: RequestInfo | URL, init?: RequestInit | undefined) => Promise<Response>,
-		params: RequestParams = {},
-		accessToken?: string | null
-	): Api<unknown> {
-		const baseUrl = env.PUBLIC_BACKEND_URL || new URL(window.location.href).origin;
+type Fetch = typeof fetch;
+type Handler = RequestHandler;
 
-		const baseApiParams: RequestParams = accessToken
-			? {
-					secure: true,
-					headers: {
-						Authorization: `Bearer ${accessToken}`
-					},
-					...params
-				}
-			: {
-					...params
-				};
-
-		return new Api({
-			baseUrl,
-			baseApiParams,
-			customFetch: fetch
-		});
-	}
-
-	static async handle<D>(
-		fetch: (input: RequestInfo | URL, init?: RequestInit | undefined) => Promise<Response>,
-		handler: (api: Api<unknown>) => Promise<HttpResponse<D, unknown>>,
-		params: RequestParams = {}
-	): Promise<D | undefined> {
-		const accessToken = get(accessTokenStore);
-		const api = this.getApi(fetch, params, accessToken);
-
-		// TODO show loading
-
-		const response = await handler(api);
-
-		if (response.ok) {
-			return response.data || (response.text() as D);
-		} else if (response.status === 401) {
-			await this.refreshAccessToken(fetch);
-		} else {
-			// TODO error handling
-			messageStore.show(response.statusText);
-			return undefined;
-		}
-	}
-
-	static async refreshAccessToken(
-		fetch: (input: RequestInfo | URL, init?: RequestInit | undefined) => Promise<Response>
-	): Promise<void> {
-		console.log('Refreshing access token...');
-
-		const api = this.getApi(fetch, { credentials: 'include' });
-		const response = await api.auth.refreshTokenList();
-
-		if (response.ok) {
-			const newAccessToken = response.data.accessToken;
-			accessTokenStore.set(newAccessToken);
-			console.log('Access token refreshed successfully:', newAccessToken);
-		} else {
-			accessTokenStore.set(null);
-			console.error('Failed to refresh access token:', response.status, response.statusText);
-		}
-	}
+export interface AccessTokenHolder {
+  set token(accessToken: string);
+  get token(): string;
+  clear(): void;
 }
+
+class DefaultAccessTokenHolder implements AccessTokenHolder {
+  token = '';
+  clear(): void {
+    this.token = '';
+  }
+}
+
+export class ApiHandler {
+  tokenHolder: AccessTokenHolder = new DefaultAccessTokenHolder();
+  private refreshInFlight: Promise<boolean> | null = null;
+
+  constructor(private readonly client: ApiClient = apiClient) {}
+
+  async handle<D>(fetch: Fetch, handler: Handler): Promise<D | undefined> {
+    const { data, response } = await this.client.execute<D>(fetch, this.tokenHolder.token, handler);
+
+    if (response.ok) return data as D;
+
+    if (response.status === 401) {
+      const refreshed = await this.refreshAccessToken(fetch);
+      if (refreshed) return this.retry<D>(fetch, handler);
+    }
+
+    messageStore.show(response.statusText);
+  }
+
+  private async retry<D>(fetch: Fetch, handler: Handler): Promise<D | undefined> {
+    const { data, response } = await this.client.execute<D>(fetch, this.tokenHolder.token, handler);
+    if (!response.ok) {
+      messageStore.show(response.statusText);
+      return;
+    }
+    return data as D;
+  }
+
+  async handleWithDefault<D>(fetch: Fetch, handler: Handler): Promise<D> {
+    const result = await this.handle<D>(fetch, handler);
+    return result ?? ({} as D);
+  }
+
+  async refreshAccessToken(fetch: Fetch): Promise<boolean> {
+    this.refreshInFlight ??= (async () => {
+      const accessToken = await this.client.refreshAccessToken(fetch);
+
+      if (accessToken) {
+        this.tokenHolder.token = accessToken;
+        return true;
+      }
+
+      this.tokenHolder.clear();
+      return false;
+    })().finally(() => {
+      this.refreshInFlight = null;
+    });
+
+    return this.refreshInFlight;
+  }
+}
+
+const apiHandler = new ApiHandler();
+export default apiHandler;
