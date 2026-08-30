@@ -1,8 +1,9 @@
+import { DryRun } from '@arch/DryRun';
 import loginFacade from '@facades/LoginFacade';
 import topPageFacade from '@facades/TopPageFacade';
 import TimeoutFactory from '@factories/TimeoutFactory';
+import ParallelRequestPage from '@pages/ParallelRequestPage';
 import { expect, test } from '@playwright/test';
-import { log } from 'console';
 
 test('token refresh', async ({ browser }) => {
   const { privatePage } = await loginFacade.login(browser);
@@ -28,4 +29,16 @@ test('token restore', async ({ browser }, testInfo) => {
   const { topPage } = await topPageFacade.open(browser, storageState);
 
   await topPage.expectLoggedIn();
+});
+
+test('token refresh on parallel requests', async ({ browser }) => {
+  const { context } = await loginFacade.login(browser);
+  const parallelRequestPage = new ParallelRequestPage(context.pages()[0], DryRun.build());
+  await parallelRequestPage.open();
+
+  await parallelRequestPage.clickInvalidateAccessTokenButton();
+  await parallelRequestPage.setParallelCalls(5);
+  await parallelRequestPage.clickRunInvestigationButton();
+
+  await parallelRequestPage.expectSummary(5, 5, 0);
 });
