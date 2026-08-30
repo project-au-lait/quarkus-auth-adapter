@@ -33,11 +33,6 @@
     "typescript-eslint": "^8.59.0",
     "vite": "^7.3.2"
   },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "esbuild"
-    ]
-  },
   "dependencies": {
     "@picocss/pico": "^2.1.1"
   }
