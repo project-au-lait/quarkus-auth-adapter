@@ -3,7 +3,7 @@ name: qaa-container
 services:
   keycloak:
     command: start-dev
-    image: quay.io/keycloak/keycloak:26.6.1
+    image: quay.io/keycloak/keycloak:26.7.3
     environment:
       FRONTEND_URL: http://localhost:${FRONTEND_PORT}
       KEYCLOAK_ADMIN: ${AUTH_USER}
@@ -16,7 +16,7 @@ services:
 
   healthchecker:
     command: ["tail", "-f", "/dev/null"]
-    image: alpine/curl
+    image: alpine/curl:8.22.0
     healthcheck:
       test:
         ["CMD", "curl", "--head", "-fsS", "http://keycloak:9000/health/ready"]
@@ -27,7 +27,7 @@ services:
       timeout: 10s
 
   smtp:
-    image: axllent/mailpit:latest
+    image: axllent/mailpit:v1.31.0
     ports:
       - ${SMTP_WEB_PORT}:8025
     restart: always

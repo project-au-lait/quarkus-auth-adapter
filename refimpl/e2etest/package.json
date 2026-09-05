@@ -11,15 +11,15 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@playwright/test": "^1.59.1",
-    "@types/node": "^24.12.2",
-    "@types/node-fetch": "^2.6.13",
-    "date-fns": "^4.1.0",
-    "dotenv": "^16.6.1",
-    "i18next": "^25.10.10",
-    "i18next-fs-backend": "^2.6.4",
-    "node-fetch": "^3.3.2",
-    "os-locale": "^6.0.2"
+    "@playwright/test": "1.62.1",
+    "@types/node": "26.4.1",
+    "@types/node-fetch": "2.6.13",
+    "date-fns": "4.4.0",
+    "dotenv": "17.4.2",
+    "i18next": "26.4.2",
+    "i18next-fs-backend": "2.6.7",
+    "node-fetch": "3.3.2",
+    "os-locale": "6.0.2"
   },
   "type": "module"
 }
