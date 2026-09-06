@@ -5,6 +5,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <artifactId>poc-auth-e2etest</artifactId>
+  <name>Quarkus Auth Adapter End-to-End Tests</name>
 
   <parent>
     <groupId>dev.aulait.qaa</groupId>

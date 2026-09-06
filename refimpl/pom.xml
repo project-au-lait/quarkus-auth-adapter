@@ -13,6 +13,7 @@
 
   <artifactId>quarkus-auth-adapter-refimpl</artifactId>
   <packaging>pom</packaging>
+  <name>Quarkus Auth Adapter Reference Implementation</name>
 
   <properties>
     <auth.user>admin</auth.user>

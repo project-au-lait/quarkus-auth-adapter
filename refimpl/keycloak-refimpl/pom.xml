@@ -5,6 +5,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <artifactId>quarkus-auth-adapter-keycloak-refimpl</artifactId>
+  <name>Quarkus Auth Adapter Keycloak Reference Implementation</name>
 
   <properties>
     <maven.deploy.skip>true</maven.deploy.skip>

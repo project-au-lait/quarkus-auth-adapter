@@ -5,6 +5,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <artifactId>quarkus-auth-adapter-svelte-refimpl</artifactId>
+  <name>Quarkus Auth Adapter Svelte Reference Implementation</name>
 
   <parent>
     <groupId>dev.aulait.qaa</groupId>
