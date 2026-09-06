@@ -45,7 +45,7 @@
     <dependency>
       <groupId>dev.aulait.mousse</groupId>
       <artifactId>mousse-util</artifactId>
-      <version>0.8-SNAPSHOT</version>
+      <version>0.8</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -96,7 +96,7 @@
       </plugin>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.14.0</version>
+        <version>3.16.0</version>
         <configuration>
           <parameters>true</parameters>
         </configuration>

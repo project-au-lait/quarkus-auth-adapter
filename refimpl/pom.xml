@@ -26,7 +26,7 @@
     <auth.accessToken.timeout>5</auth.accessToken.timeout>
     <auth.refreshToken.cookie.timeout>10</auth.refreshToken.cookie.timeout>
 
-    <exec-plugin.version>3.2.0</exec-plugin.version>
+    <exec-plugin.version>3.6.3</exec-plugin.version>
 
     <maven.deploy.skip>true</maven.deploy.skip>
   </properties>
@@ -43,7 +43,7 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>properties-maven-plugin</artifactId>
-        <version>1.2.1</version>
+        <version>1.3.0</version>
         <executions>
           <execution>
             <id>load-env-properties</id>
@@ -90,7 +90,7 @@
           <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>build-helper-maven-plugin</artifactId>
-            <version>3.6.0</version>
+            <version>3.6.1</version>
             <executions>
               <execution>
                 <id>reserve-ports</id>
