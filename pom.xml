@@ -206,6 +206,8 @@
             <configuration>
               <publishingServerId>central</publishingServerId>
               <autoPublish>false</autoPublish>
+              <excludeArtifacts>
+                quarkus-auth-adapter-refimpl,quarkus-auth-adapter-container,poc-auth-e2etest,quarkus-auth-adapter-keycloak-refimpl,quarkus-auth-adapter-svelte-refimpl</excludeArtifacts>
             </configuration>
           </plugin>
         </plugins>
