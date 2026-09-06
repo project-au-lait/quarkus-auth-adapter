@@ -36,7 +36,7 @@ First, add the QAA dependency to your backend project's `pom.xml`:
     <dependency>
       <groupId>dev.aulait.qaa</groupId>
       <artifactId>quarkus-auth-adapter-keycloak</artifactId>
-      <version>0.8-SNAPSHOT</version>
+      <version>0.8</version>
     </dependency>
 
     <dependency>

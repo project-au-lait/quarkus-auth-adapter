@@ -65,7 +65,7 @@
   <parent>
     <groupId>dev.aulait.qaa</groupId>
     <artifactId>quarkus-auth-adapter-refimpl</artifactId>
-    <version>0.8-SNAPSHOT</version>
+    <version>0.8</version>
     <relativePath>../</relativePath>
   </parent>
 

@@ -6,7 +6,7 @@
 
   <groupId>dev.aulait.qaa</groupId>
   <artifactId>quarkus-auth-adapter</artifactId>
-  <version>0.8-SNAPSHOT</version>
+  <version>0.8</version>
   <packaging>pom</packaging>
 
   <dependencies>

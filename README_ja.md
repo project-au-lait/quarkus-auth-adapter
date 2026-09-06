@@ -36,7 +36,7 @@ Keycloak に関しては OIDC プロバイダーとして Realm、Client がセ�
     <dependency>
       <groupId>dev.aulait.qaa</groupId>
       <artifactId>quarkus-auth-adapter-keycloak</artifactId>
-      <version>0.8-SNAPSHOT</version>
+      <version>0.8</version>
     </dependency>
 
     <dependency>
